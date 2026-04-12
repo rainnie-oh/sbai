@@ -17,7 +17,9 @@
       "skin": "#f2c7a5", "hair": "#7d63aa", "jacket": "#8b6aa8",
       "shirt": "#efe8f8", "pants": "#6f567f", "shoe": "#5e4c76",
       "pose": "thinking", "prop": "bench"
-    }
+    },
+    "innateAIName": "DeepSeek",
+    "innateAIDescription": "开源免费性能还猛，是你精神故乡，白嫖界的耶路撒冷。"
   },
   {
     "type": "RICH",
@@ -28,7 +30,7 @@
     "campKey": "exploiters",
     "subtitle": "算力资本家 The Exploiters",
     "tagline": "公家的算力不用白不用，用了也白用",
-    "description": "拿着公司买单的 API Key，哪怕只是写个 50 字请假条，也要把 200 页财报丢进去当上下文。主打公费算力自由，用几万块 GPU 资源跑两句废话，是打工人最隐秘的福报。",
+    "description": "拿着公司买单 of API Key，哪怕只是写个 50 字请假条，也要把 200 页财报丢进去当上下文。主打公费算力自由，用几万块 GPU 资源跑两句废话，是打工人最隐秘的福报。",
     "why": "你愿意把上下文拉满，也愿意让公司替你付学费。AI 对你来说，先省脑子再说。",
     "strengths": ["效率优先", "上下文喂养充足", "愿意为结果买单"],
     "risks": ["容易过度依赖", "成本感知偏弱", "常把复杂问题外包"],
@@ -37,7 +39,9 @@
       "skin": "#f0c7a8", "hair": "#9869a7", "jacket": "#b07bb8",
       "shirt": "#f7effb", "pants": "#8e6ba4", "shoe": "#6d537b",
       "pose": "briefcase", "prop": "chart"
-    }
+    },
+    "innateAIName": "Claude",
+    "innateAIDescription": "上下文窗口够大。你俩很配，一个能塞一个能吃。"
   },
   {
     "type": "LAZY",
@@ -57,7 +61,9 @@
       "skin": "#f1c6a7", "hair": "#7e68b2", "jacket": "#9c83ca",
       "shirt": "#f7f1fb", "pants": "#7f68a2", "shoe": "#5d4c73",
       "pose": "phone", "prop": "bubble"
-    }
+    },
+    "innateAIName": "豆包",
+    "innateAIDescription": "随叫随到不废话不矫情出活快。"
   },
   {
     "type": "SOLO",
@@ -77,7 +83,9 @@
       "skin": "#eec4a2", "hair": "#6e72c0", "jacket": "#8b8ad4",
       "shirt": "#f6f5ff", "pants": "#6d6cb6", "shoe": "#50508b",
       "pose": "conduct", "prop": "console"
-    }
+    },
+    "innateAIName": "Kimi",
+    "innateAIDescription": "能处理长文档、能当助理、能多线程跑任务，是你一人公司里最能干的那个实习生。"
   },
   {
     "type": "PUAA",
@@ -87,7 +95,7 @@
     "camp": "AI调教师",
     "campKey": "trainers",
     "subtitle": "AI调教师 The Trainers",
-    "tagline": "不对，这不是我想要的，再想想",
+    "tagline": "你给我再想想",
     "description": "掌握了领导 PUA 员工的精髓。需求往往是模糊的，但批评永远是严厉的。最爱说「不对，再想想」。偶尔还会让 AI 总结自己错在哪，试图让一行行代码学会自我反思。",
     "why": "你最熟悉的交互动作不是提需求，是打回重做。",
     "strengths": ["标准敏感", "反馈直接", "擅长逼近目标感"],
@@ -97,7 +105,9 @@
       "skin": "#efc8a9", "hair": "#4a8c84", "jacket": "#63b7af",
       "shirt": "#eefaf8", "pants": "#4b8d86", "shoe": "#336660",
       "pose": "pointing", "prop": "clipboard"
-    }
+    },
+    "innateAIName": "ChatGPT",
+    "innateAIDescription": "听话、能改、不顶嘴，是你的完美出气包。"
   },
   {
     "type": "SPEC",
@@ -117,7 +127,9 @@
       "skin": "#efc5a2", "hair": "#4f9ea7", "jacket": "#5bb7c1",
       "shirt": "#eefbfd", "pants": "#488f97", "shoe": "#315f64",
       "pose": "typing", "prop": "console"
-    }
+    },
+    "innateAIName": "Claude",
+    "innateAIDescription": "逻辑强、遵循指令，比较正经的AI。"
   },
   {
     "type": "LUCK",
@@ -137,7 +149,9 @@
       "skin": "#f0c8ab", "hair": "#569db5", "jacket": "#73bad2",
       "shirt": "#effbfd", "pants": "#5b8eaa", "shoe": "#376173",
       "pose": "shuffle", "prop": "cards"
-    }
+    },
+    "innateAIName": "Gemini",
+    "innateAIDescription": "多模态大力出奇迹，每次输出都像开盲盒。"
   },
   {
     "type": "ANTI",
@@ -157,7 +171,9 @@
       "skin": "#efc6a7", "hair": "#547f8a", "jacket": "#6ba9ba",
       "shirt": "#f2fbfc", "pants": "#5a8790", "shoe": "#355661",
       "pose": "magnifier", "prop": "lens"
-    }
+    },
+    "innateAIName": "Grok",
+    "innateAIDescription": "嘴硬、敢怼、不轻易认输，属于棋逢对手。"
   },
   {
     "type": "PLEAS",
@@ -177,7 +193,9 @@
       "skin": "#f1c8a8", "hair": "#6ea66f", "jacket": "#84c487",
       "shirt": "#f3fbf0", "pants": "#699a6a", "shoe": "#486c49",
       "pose": "greet", "prop": "hat"
-    }
+    },
+    "innateAIName": "文心一言",
+    "innateAIDescription": "回复自带客气 buff，能想象两边都在鞠躬的画面感。"
   },
   {
     "type": "LOVE",
@@ -197,7 +215,9 @@
       "skin": "#f2cab0", "hair": "#78ab67", "jacket": "#8fc97b",
       "shirt": "#f6fcf1", "pants": "#719b66", "shoe": "#506d4a",
       "pose": "heart", "prop": "heart"
-    }
+    },
+    "innateAIName": "ChatGPT",
+    "innateAIDescription": "（最近虽然变笨但）温柔、耐心、是你最理想的深夜陪伴者。"
   },
   {
     "type": "MING",
@@ -207,7 +227,7 @@
     "camp": "情感共生体",
     "campKey": "empaths",
     "subtitle": "情感共生体 The Empaths",
-    "tagline": "AI说了今天不宜做决定，那我就不做",
+    "tagline": "帮我算一卦今天中午外卖点啥？",
     "description": "遇事不决，AI 玄学。辞不辞职问 AI，买不买包问 AI，分不分手也问 AI。用最前沿的千亿参数大模型，干最传统的求神拜佛。只要 AI 算出今天宜摆烂，就心安理得地原地躺平。",
     "why": "你要的不是严格证明，是一个能推你动起来的答案。",
     "strengths": ["决策启动快", "擅长借外力破犹豫", "能从模糊答案里读出方向"],
@@ -217,7 +237,9 @@
       "skin": "#f0c8a7", "hair": "#79ad6d", "jacket": "#93ca86",
       "shirt": "#f6fcf2", "pants": "#78996a", "shoe": "#536949",
       "pose": "oracle", "prop": "crystal"
-    }
+    },
+    "innateAIName": "通义千问",
+    "innateAIDescription": "名字里带「千问」，你正好有千万个问题，天造地设。"
   },
   {
     "type": "BABY",
@@ -237,7 +259,9 @@
       "skin": "#f0c7a8", "hair": "#6ea66f", "jacket": "#8fc97b",
       "shirt": "#f6fcf1", "pants": "#699a6a", "shoe": "#486c49",
       "pose": "question", "prop": "bag"
-    }
+    },
+    "innateAIName": "Kimi",
+    "innateAIDescription": "你问啥它答啥，还能帮你整理资料，妈妈最佳人选。"
   },
   {
     "type": "PROMPT",
@@ -257,7 +281,9 @@
       "skin": "#f1c9ab", "hair": "#c2943b", "jacket": "#dfb560",
       "shirt": "#fff8eb", "pants": "#c39c52", "shoe": "#8a6c2d",
       "pose": "stack", "prop": "papers"
-    }
+    },
+    "innateAIName": "Claude",
+    "innateAIDescription": "指令遵循好、长文本输出稳定、会认真读你写的每一个字，最能对得起你那段 500 字 prompt。"
   },
   {
     "type": "MUSE",
@@ -270,14 +296,16 @@
     "tagline": "帮我写段有宿命感的代码",
     "description": "需求极度抽象，比起发指令，更像在降神。面无表情地敲下「画出一种听得见的寂静」，然后在失控的边缘冷眼旁观，等待大模型的幻觉为你显灵。",
     "why": "你靠感觉开路，也愿意把一部分结果交给偶然。",
-    "strengths": ["想象力强", "抽象表达能力高", "容易得到意外灵感"],
+    "strengths": ["想象力强", "抽象表达能力高", "容易得到意外灵灵感"],
     "risks": ["复现性差", "需求边界模糊", "容易沉迷偶然惊喜"],
     "palette": { "accent": "#d2a15b", "soft": "#faf0df", "ink": "#7b5f2d" },
     "illustration": {
       "skin": "#f0c7a6", "hair": "#bb8f49", "jacket": "#d7ad69",
       "shirt": "#fff7ef", "pants": "#bb9051", "shoe": "#886731",
       "pose": "paint", "prop": "brush"
-    }
+    },
+    "innateAIName": "Gemini",
+    "innateAIDescription": "多模态、脑洞大、偶尔幻觉出奇迹，和你电波也许对得上"
   },
   {
     "type": "MEME",
@@ -287,7 +315,7 @@
     "camp": "赛博造物主",
     "campKey": "makers",
     "subtitle": "赛博造物主 The Makers",
-    "tagline": "AI的最高使命，是帮我整活",
+    "tagline": "帮我生爱因斯坦大战特斯拉",
     "description": "拥有顶级整活能力。让 AI 写林黛玉倒拔垂杨柳的剧本，生成朋友长着狗头的奇葩图片。用最强的生产力工具，制造最纯粹的网络电子垃圾。",
     "why": "你对 AI 的核心诉求很简单：好玩，够邪门，最好还能传播。",
     "strengths": ["梗感强", "玩具化能力高", "善于制造传播点"],
@@ -297,7 +325,9 @@
       "skin": "#f0c7a6", "hair": "#bb8f49", "jacket": "#d7ad69",
       "shirt": "#fff7ef", "pants": "#bb9051", "shoe": "#886731",
       "pose": "laugh", "prop": "mask"
-    }
+    },
+    "innateAIName": "Grok",
+    "innateAIDescription": "自带 meme 属性、嘴贱、不装正经，是整活界能跟上你节奏的 AI。"
   },
   {
     "type": "DIST",
@@ -307,8 +337,8 @@
     "camp": "赛博造物主",
     "campKey": "makers",
     "subtitle": "赛博造物主 The Makers",
-    "tagline": "人可以走，Skill 留下来",
-    "description": "信奉「万物皆可蒸馏」。把同事蒸馏成 Skill、把老板蒸馏成三行需求，最近在考虑把自己也蒸馏掉——毕竟自己 .skill 永远不会在周五下午突然消失。更进一步，直接掌握女娲.skill，想蒸谁蒸谁：蒸馏前任，把人装进 AI 里；蒸馏名人，跟大佬隔空对话；蒸馏自己，得赛博永生。团队在，不如 Skill 在。人会跑路，prompt 不会。",
+    "tagline": "老板也可以蒸馏吗",
+    "description": "信奉「万物皆可蒸馏」的大化学家，馒头可以蒸，离职同事可以蒸，那…",
     "why": "你最烦废话。你要的是压缩、提纯、马上能执行。",
     "strengths": ["提炼能力强", "信息压缩极快", "能把混乱转成行动项"],
     "risks": ["容易过度简化", "对背景耐心不足", "显得过于冷酷"],
@@ -317,6 +347,8 @@
       "skin": "#efc4a1", "hair": "#b7853f", "jacket": "#d1a45a",
       "shirt": "#fff8ef", "pants": "#b18443", "shoe": "#7b5b29",
       "pose": "stack", "prop": "papers"
-    }
+    },
+    "innateAIName": "Llama",
+    "innateAIDescription": "开源、可本地部署、可自己训练微调，是蒸馏大师的理想底座——你要的不是产品，是原材料。"
   }
 ]

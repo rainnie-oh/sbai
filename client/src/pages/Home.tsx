@@ -22,7 +22,9 @@ import { PersonaAvatar } from "@/components/ai-bti/PersonaAvatar";
 import { Button } from "@/components/ui/button";
 import {
   calculateQuizResult,
+  getSimilarPersonalities,
   groupedPersonalities,
+  personalities,
   questions,
   scoringRules,
   siteCopy,
@@ -45,10 +47,15 @@ export default function Home() {
   const answeredCount = useMemo(() => Object.keys(responses).length, [responses]);
   const currentQuestion = questions[currentIndex];
   const currentAnswer = currentQuestion ? responses[currentQuestion.id] : undefined;
-  const result = useMemo(
-    () => (resultCode ? calculateQuizResult(responses) : null),
-    [responses, resultCode],
-  );
+  const result = useMemo(() => {
+    if (!resultCode) return null;
+    return calculateQuizResult(responses);
+  }, [responses, resultCode]);
+
+  const recommendations = useMemo(() => {
+    if (!result) return [];
+    return getSimilarPersonalities(result.personality, personalities, 3);
+  }, [result]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -363,26 +370,15 @@ export default function Home() {
 
         <main className="container py-8 md:py-12">
           <div className="mx-auto max-w-6xl">
-            <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-              <div>
-                <p className="section-eyebrow">RESULT</p>
-                <h1 className="font-display text-4xl font-bold text-slate-800 md:text-5xl">
-                  你的 AI-PTI 结果
-                </h1>
-                <p className="mt-3 max-w-3xl text-base leading-8 text-slate-500">
-                  人格不一定决定命运，但会决定你怎么对一个会回话的输入框上头。
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-3">
-                <Button variant="outline" className="rounded-full px-5" onClick={shareResult}>
-                  <Share2 className="mr-2 size-4" />
-                  {siteCopy.result.shareLabel}
-                </Button>
-                <Button className="cta-primary rounded-full px-5" onClick={downloadPoster}>
-                  <Download className="mr-2 size-4" />
-                  {siteCopy.result.downloadLabel}
-                </Button>
-              </div>
+            <div className="mb-6 flex flex-wrap items-center justify-end gap-3">
+              <Button variant="outline" className="rounded-full px-5" onClick={shareResult}>
+                <Share2 className="mr-2 size-4" />
+                {siteCopy.result.shareLabel}
+              </Button>
+              <Button className="cta-primary rounded-full px-5" onClick={downloadPoster}>
+                <Download className="mr-2 size-4" />
+                {siteCopy.result.downloadLabel}
+              </Button>
             </div>
 
             <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
@@ -394,26 +390,22 @@ export default function Home() {
                   <div className="absolute inset-x-0 bottom-0 h-24 bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.55)_100%)]" />
                   <div className="relative z-10 grid gap-8 md:grid-cols-[minmax(0,1fr)_260px] md:items-center">
                     <div>
-                      <span
-                        className="inline-flex rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.18em]"
-                        style={{
-                          color: result.personality.palette.ink,
-                          backgroundColor: "rgba(255,255,255,0.72)",
-                        }}
-                      >
-                        {result.personality.camp}
-                      </span>
-                      <h2 className="mt-5 font-display text-[2.6rem] font-bold leading-none text-slate-800 md:text-[3.35rem]">
+                      <div className="font-display text-xl font-bold uppercase tracking-wider text-slate-500/80 md:text-2xl">
+                        {result.personality.type}
+                      </div>
+                      <h2 className="mt-2 font-display text-[2.8rem] font-bold leading-none text-slate-800 md:text-[3.8rem]">
                         {result.personality.nameZh}
                       </h2>
-                      <div className="mt-4 flex flex-wrap items-center gap-3 text-sm font-semibold text-slate-500 md:text-base">
-                        <span className="rounded-full bg-white/70 px-3 py-1">{result.personality.type}</span>
-                        <span className="rounded-full bg-white/70 px-3 py-1">{result.code}</span>
-                        <span className="rounded-full bg-white/70 px-3 py-1">{result.personality.subtitle}</span>
+                      <div className="mt-8">
+                        <div className="inline-block rounded-lg border border-slate-400/20 bg-white/40 px-4 py-2 shadow-sm backdrop-blur-sm">
+                          <p className="font-brand text-sm font-bold italic text-slate-700/80 md:text-base">
+                            “{result.personality.tagline}”
+                          </p>
+                        </div>
+                        <p className="mt-6 max-w-xl text-lg leading-relaxed text-slate-600">
+                          {result.personality.description}
+                        </p>
                       </div>
-                      <p className="mt-5 max-w-xl text-lg leading-8 text-slate-600">
-                        {result.personality.description}
-                      </p>
                     </div>
                     <div className="mx-auto flex justify-center">
                       <PersonaAvatar
@@ -425,98 +417,102 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="grid gap-6 px-6 py-8 md:grid-cols-[minmax(0,1fr)_320px] md:px-10 md:py-10">
-                  <div>
-                    <p className="section-eyebrow">{siteCopy.result.whyTitle}</p>
-                    <p className="mt-3 text-base leading-8 text-slate-600 md:text-lg">
-                      {result.personality.description}
-                    </p>
-                  </div>
-                  <div className="rounded-[28px] bg-[#f7f3ef] p-5">
-                    <p className="text-sm font-bold uppercase tracking-[0.16em] text-slate-500">
-                      {siteCopy.result.combinationTitle}
-                    </p>
-                    <div className="mt-4 space-y-3">
-                      {result.axes.map((axis) => (
-                        <div key={axis.axisId} className="rounded-[22px] bg-white px-4 py-4 shadow-[0_12px_24px_rgba(29,46,72,0.05)]">
-                          <div className="mb-2 flex items-center justify-between gap-3 text-sm font-semibold text-slate-600">
-                            <span>{axis.leftLabel}</span>
-                            <span className="text-slate-400">vs</span>
-                            <span>{axis.rightLabel}</span>
-                          </div>
-                          <AxisMeter axis={axis} compact />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              <aside className="space-y-6">
-                <div className="panel p-6">
-                  <p className="section-eyebrow">{siteCopy.result.axisTitle}</p>
-                  <div className="mt-5 space-y-5">
+                <div className="px-6 py-8 md:px-10 md:py-10">
+                  <p className="section-eyebrow mb-6">{siteCopy.result.axisTitle}</p>
+                  <div className="grid gap-x-12 gap-y-10 md:grid-cols-2">
                     {result.axes.map((axis) => (
-                      <div key={axis.axisId}>
-                        <div className="mb-2 flex items-center justify-between gap-4 text-sm font-semibold text-slate-600">
-                          <span>{axis.leftLabel}</span>
-                          <span>{axis.leftPercent}% / {axis.rightPercent}%</span>
-                          <span>{axis.rightLabel}</span>
+                      <div key={axis.axisId} className="flex flex-col">
+                        <div className="mb-3 flex items-center justify-between font-display text-sm font-bold tracking-tight text-slate-700">
+                          <span className={axis.leftPercent >= 50 ? "text-slate-900" : "text-slate-400"}>
+                            {axis.leftLabel} ({axis.leftPercent}%)
+                          </span>
+                          <span className={axis.rightPercent > 50 ? "text-slate-900" : "text-slate-400"}>
+                            {axis.rightLabel} ({axis.rightPercent}%)
+                          </span>
                         </div>
                         <AxisMeter axis={axis} />
-                        <div className="mt-3 grid gap-2 text-xs leading-6 text-slate-500 sm:grid-cols-2">
-                          <p>{axis.leftDescription}</p>
-                          <p>{axis.rightDescription}</p>
+                        <div className="mt-4 text-left">
+                          {axis.leftPercent >= axis.rightPercent ? (
+                            <p className="text-sm leading-relaxed text-slate-500">
+                              <span className="font-bold text-slate-700">【{axis.leftLabel}】</span>
+                              {axis.leftDescription}
+                            </p>
+                          ) : (
+                            <p className="text-sm leading-relaxed text-slate-500">
+                              <span className="font-bold text-slate-700">【{axis.rightLabel}】</span>
+                              {axis.rightDescription}
+                            </p>
+                          )}
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
+              </section>
 
-                <div className="panel p-6">
-                  <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-1">
-                    <InfoList title="你比较像什么" items={result.personality.strengths} tone="good" />
-                    <InfoList title="你容易翻什么车" items={result.personality.risks} tone="risk" />
+              <aside className="space-y-6">
+                <div className="panel p-8">
+                  <p className="section-eyebrow mb-5">INNATE AI</p>
+                  <h3 className="font-display text-2xl font-extrabold text-slate-800">
+                    {result.personality.innateAIName}
+                  </h3>
+                  <div className="mt-6 rounded-3xl bg-slate-50 p-6 border border-slate-100">
+                    <p className="text-base leading-relaxed text-slate-600">
+                      {result.personality.innateAIDescription}
+                    </p>
                   </div>
+                  <p className="mt-6 text-xs leading-5 text-slate-400 uppercase tracking-widest font-bold opacity-60">
+                    The Optimal AI Persona
+                  </p>
                 </div>
               </aside>
             </div>
 
             <section className="mt-10">
-              <div className="mb-5 flex items-end justify-between gap-4">
-                <div>
-                  <p className="section-eyebrow">TYPE LIBRARY</p>
-                  <h2 className="font-display text-3xl font-bold text-slate-800">全部人格一览</h2>
-                </div>
-                <button className="nav-link" onClick={restartQuiz}>
-                  <RotateCcw className="mr-2 size-4" />
+              <div className="mb-6">
+                <p className="section-eyebrow">RESISTANCE MATCH</p>
+                <h2 className="font-display text-3xl font-bold text-slate-800">你可能还像...</h2>
+                <p className="mt-2 text-sm text-slate-500">基于你的互动风格，以下人格也与你高度契合</p>
+              </div>
+              <div className="grid gap-6 md:grid-cols-3">
+                {recommendations.map((item) => (
+                  <div
+                    key={item.type}
+                    className="group relative overflow-hidden rounded-[32px] bg-white p-6 shadow-sm border border-slate-100 transition-all hover:shadow-md"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="relative">
+                        <div 
+                          className="absolute inset-0 rounded-full blur-xl opacity-20"
+                          style={{ backgroundColor: item.palette.accent }}
+                        />
+                        <PersonaAvatar illustration={item.illustration} size={80} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            {item.type}
+                          </span>
+                        </div>
+                        <h3 className="mt-0.5 text-xl font-bold text-slate-800">{item.nameZh}</h3>
+                      </div>
+                    </div>
+                    <p className="mt-4 text-sm leading-relaxed text-slate-500 italic">
+                      “{item.tagline}”
+                    </p>
+                    <div 
+                      className="absolute bottom-0 left-0 h-1 w-full opacity-30"
+                      style={{ backgroundColor: item.palette.accent }}
+                    />
+                  </div>
+                ))}
+              </div>
+              
+              <div className="mt-12 flex justify-center">
+                <button className="btn-secondary rounded-full px-8 py-4 flex items-center gap-2" onClick={restartQuiz}>
+                  <RotateCcw className="size-4" />
                   {siteCopy.result.retakeLabel}
                 </button>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                {groupedPersonalities.flatMap((group) =>
-                  group.items.map((item) => {
-                    const active = item.type === result.personality.type;
-                    return (
-                      <button
-                        key={item.type}
-                        className={`type-card text-left ${active ? "type-card-active" : ""}`}
-                        style={{ backgroundColor: active ? item.palette.soft : "#ffffff" }}
-                      >
-                        <div className="flex items-center gap-4">
-                          <PersonaAvatar illustration={item.illustration} size={86} />
-                          <div>
-                            <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
-                              {item.type}
-                            </p>
-                            <h3 className="mt-1 text-lg font-bold text-slate-800">{item.nameZh}</h3>
-                            <p className="mt-1 text-sm text-slate-500">{item.subtitle}</p>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  }),
-                )}
               </div>
             </section>
           </div>
