@@ -1,0 +1,115 @@
+{
+  "version": 3,
+  "axes": [
+    {
+      "id": "economy",
+      "left": {
+        "key": "F",
+        "label": "Frugal",
+        "labelZh": "克制",
+        "description": "精打细算、热衷白嫖、算力焦虑、能省则省。"
+      },
+      "right": {
+        "key": "A",
+        "label": "Abundant",
+        "labelZh": "挥霍",
+        "description": "算力自由、公费福报、上下文拉满、浪费算力无所谓。"
+      },
+      "defaultTie": "F"
+    },
+    {
+      "id": "control",
+      "left": {
+        "key": "D",
+        "label": "Dominant",
+        "labelZh": "强势",
+        "description": "PUA AI、严格要求、反复修改、掌控一切。"
+      },
+      "right": {
+        "key": "S",
+        "label": "Submissive",
+        "labelZh": "随缘",
+        "description": "AI 说啥是啥、懒得教、随缘摆烂、佛系接受。"
+      },
+      "defaultTie": "S"
+    },
+    {
+      "id": "emotion",
+      "left": {
+        "key": "C",
+        "label": "Cold",
+        "labelZh": "工具",
+        "description": "纯工具人、效率至上、无情绪、不客套。"
+      },
+      "right": {
+        "key": "E",
+        "label": "Emotional",
+        "labelZh": "情感投射",
+        "description": "谢谢辛苦了、深夜倾诉、AI 是唯一懂我的、情感寄托。"
+      },
+      "defaultTie": "C"
+    },
+    {
+      "id": "creative",
+      "left": {
+        "key": "P",
+        "label": "Precise",
+        "labelZh": "精密产出",
+        "description": "JSON 格式、严谨逻辑、技术流、结构化需求。"
+      },
+      "right": {
+        "key": "V",
+        "label": "Vibe",
+        "labelZh": "意识流",
+        "description": "抽象需求、意识流、整活、凭感觉。"
+      },
+      "defaultTie": "P"
+    }
+  ],
+  "questionsPerAxis": "variable",
+  "optionScoreRule": "每题 3 个选项：+3 强倾向、+2 中倾向、+1 弱倾向、中性不计分。",
+  "resolutionRule": {
+    "step1": "先比较每个维度左右两侧总分，高者胜出。",
+    "step2": "若平分，则使用该轴默认倾向。",
+    "step3": "按 economy, control, emotion, creative 四轴顺序拼接代码。",
+    "step4": "若四字母组合对应多个人格，则使用次级特征区分。"
+  },
+  "codeOrder": [
+    "economy",
+    "control",
+    "emotion",
+    "creative"
+  ],
+  "mapping": {
+    "FSCP": "POOR",
+    "ASCP": ["RICH", "LAZY", "SOLO"],
+    "ADCP": ["PUAA", "SPEC", "ANTI"],
+    "ADSV": "LUCK",
+    "FSDE": "PLEAS",
+    "ASDE": ["LOVE", "MING", "BABY"],
+    "FSDP": ["PROMPT", "DIST"],
+    "FSDV": ["MUSE", "MEME"]
+  },
+  "secondaryRules": {
+    "ASCP": {
+      "description": "企业吸血鬼 vs 复制粘贴侠 vs 一人公司CEO",
+      "logic": "if Q6===C → SOLO; elif Q2===C || Q11===C → LAZY; else → RICH"
+    },
+    "ADCP": {
+      "description": "PUA大师 vs 人形AI vs 职业杠精",
+      "logic": "if Q3===A → SPEC; elif Q2===A || Q11===A → PUAA; else → ANTI"
+    },
+    "ASDE": {
+      "description": "心碎小狗 vs 命理大师 vs 电子妈宝",
+      "logic": "if Q18===A → MING; elif Q7===C && Q12===C → LOVE; elif Q18===C → BABY; else → LOVE"
+    },
+    "FSDV": {
+      "description": "意识流艺术家 vs 乐子人",
+      "logic": "if Q9===C || Q16===C → MEME; else → MUSE"
+    },
+    "FSDP": {
+      "description": "提示词诗人 vs 蒸馏大师",
+      "logic": "if Q13===A → DIST; else → PROMPT"
+    }
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "brand": {
+    "name": "AI-PTI",
+    "tagline": "AI 交互人格测试",
+    "legalNote": "不是科学。只是很像你。"
+  },
+  "nav": [
+    {
+      "label": "16 人格",
+      "href": "#types"
+    },
+    {
+      "label": "开始测试",
+      "href": "#test"
+    }
+  ],
+  "hero": {
+    "eyebrow": "AI INTERACTION PERSONALITY TEST",
+    "title": "测测你到底怎么用 AI。",
+    "description": "18 道题。每题 3 个选项。专门看你怎么给 AI 花钱、怎么管它、跟它什么关系、以及你到底是在搞创作还是搞笑。",
+    "primaryCta": "开始测试",
+    "secondaryCta": "先看 16 人格",
+    "stats": [
+      {
+        "label": "题量",
+        "value": "18"
+      },
+      {
+        "label": "选项",
+        "value": "每题 3 个"
+      },
+      {
+        "label": "时长",
+        "value": "约 3 分钟"
+      }
+    ]
+  },
+  "about": {
+    "title": "这到底是什么测试",
+    "description": "它不聊抽象人格，也不装心理学。它只看一件事：你平时怎么跟 AI 说话，怎么使唤它，怎么依赖它，怎么在它犯蠢时暴露出你自己的本性。"
+  },
+  "dimensionsIntro": {
+    "title": "它就看四件事",
+    "description": "消费观、控制欲、情感值、创作力。说白了，就是你舍不舍得花 token、管不管得住 AI、对它有没有感情、以及你用它到底是在正经干活还是在整活。"
+  },
+  "typesIntro": {
+    "title": "16 种 AI 交互人格",
+    "description": "不是玄学。就是你平时和 AI 相处时，露出来的那点东西。"
+  },
+  "editor": {
+    "title": "题库工作台",
+    "description": "如果后面还要继续改题，就盯这里。题目要像真事，选项要短，读完就能选，不要写成 AI 发布会发言稿。",
+    "goodTitle": "好的写法",
+    "good": [
+      "先给场景：代码报错、长语音、订阅费、模型胡说八道。",
+      "选项要短，最好一眼扫完。",
+      "只问你会怎么做，不问你相信什么。"
+    ],
+    "badTitle": "坏的写法",
+    "bad": [
+      "空话太多，看完还不知道在问什么。",
+      "一股翻译腔，像产品白皮书。",
+      "一个选项写成半段散文。"
+    ],
+    "sourceTitle": "以后改题主要动这几个文件",
+    "sources": [
+      {
+        "label": "题库",
+        "path": "client/src/data/questions.json"
+      },
+      {
+        "label": "人格文案",
+        "path": "client/src/data/personality-types.json"
+      },
+      {
+        "label": "站点固定文案",
+        "path": "client/src/data/site-copy.json"
+      }
+    ],
+    "exampleTitle": "你给的这个方向是对的",
+    "exampleQuestion": {
+      "prompt": "AI 第一遍吐出来全是废话，你会：",
+      "options": [
+        "A. 骂它「写什么垃圾，给我重写」",
+        "B. 换个问法/给整改意见",
+        "C. 算了，我自己改吧"
+      ]
+    }
+  },
+  "quiz": {
+    "title": "开始测试",
+    "intro": "按平时来答。别演。",
+    "nextLabel": "下一题",
+    "restartLabel": "重新来过",
+    "submitLabel": "查看结果",
+    "progressLabel": "测试进度"
+  },
+  "loading": {
+    "title": "正在生成你的结果",
+    "lines": [
+      "系统正在统计你的消费观、控制欲和情感浓度。",
+      "别紧张，这玩意儿暂时不进档案。",
+      "快了。你的电子人格马上出土。"
+    ]
+  },
+  "result": {
+    "shareLabel": "分享结果",
+    "downloadLabel": "下载人格卡片",
+    "downloadAvatarLabel": "下载人格形象",
+    "retakeLabel": "重新测试",
+    "axisTitle": "详细打分",
+    "whyTitle": "为什么是你",
+    "combinationTitle": "人格映射",
+    "shareText": "我测了 AI-PTI，结果是："
+  }
+}

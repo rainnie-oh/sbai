@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "title": "AI-BTI 题库工作台",
+  "coreRule": "题目必须是具体场景。选项必须短。不要解释测试理念。",
+  "rewriteChecklist": [
+    "先问真实行为，再问态度。",
+    "题干尽量一句话说完。",
+    "每题只保留一个冲突点。",
+    "选项读完最好不超过 3 秒。",
+    "宁可更损一点，也不要更空一点。"
+  ],
+  "goodExamples": [
+    "AI 输出的代码运行报错了，出现了低级逻辑漏洞：",
+    "把别人发来的长语音直接扔给 AI 总结。",
+    "额度快见底了，你会？"
+  ],
+  "badExamples": [
+    "这套测试旨在探索你的人机协作模式。",
+    "当你与 AI 互动时，你更倾向于展现怎样的自我？",
+    "每个选项都长到像项目复盘。"
+  ],
+  "editTargets": [
+    "client/src/data/questions.json",
+    "client/src/data/personality-types.json",
+    "client/src/data/site-copy.json"
+  ]
+}
