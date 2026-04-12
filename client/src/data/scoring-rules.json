@@ -82,13 +82,24 @@
   ],
   "mapping": {
     "FSCP": "POOR",
+    "FSCE": "POOR",
     "ASCP": ["RICH", "LAZY", "SOLO"],
+    "ASCE": ["RICH", "LAZY", "SOLO"],
+    "ASCV": ["RICH", "LAZY", "SOLO"],
     "ADCP": ["PUAA", "SPEC", "ANTI"],
-    "ADSV": "LUCK",
-    "FSDE": "PLEAS",
-    "ASDE": ["LOVE", "MING", "BABY"],
-    "FSDP": ["PROMPT", "DIST"],
-    "FSDV": ["MUSE", "MEME"]
+    "ADCE": ["PUAA", "SPEC", "ANTI"],
+    "ADEP": ["PUAA", "SPEC", "ANTI"],
+    "ADCV": "LUCK",
+    "ADEV": "LUCK",
+    "FSEP": "PLEAS",
+    "FDEP": "PLEAS",
+    "ASEV": ["LOVE", "MING", "BABY"],
+    "ASEP": ["LOVE", "MING", "BABY"],
+    "FSEV": ["LOVE", "MING", "BABY"],
+    "FDCP": ["PROMPT", "DIST"],
+    "FDCV": ["MUSE", "MEME"],
+    "FSCV": ["MUSE", "MEME"],
+    "FDEV": ["MUSE", "MEME"]
   },
   "secondaryRules": {
     "ASCP": {
@@ -99,15 +110,15 @@
       "description": "PUA大师 vs 人形AI vs 职业杠精",
       "logic": "if Q3===A → SPEC; elif Q2===A || Q11===A → PUAA; else → ANTI"
     },
-    "ASDE": {
+    "ASEV": {
       "description": "心碎小狗 vs 命理大师 vs 电子妈宝",
       "logic": "if Q18===A → MING; elif Q7===C && Q12===C → LOVE; elif Q18===C → BABY; else → LOVE"
     },
-    "FSDV": {
+    "FDCV": {
       "description": "意识流艺术家 vs 乐子人",
       "logic": "if Q9===C || Q16===C → MEME; else → MUSE"
     },
-    "FSDP": {
+    "FDCP": {
       "description": "提示词诗人 vs 蒸馏大师",
       "logic": "if Q13===A → DIST; else → PROMPT"
     }

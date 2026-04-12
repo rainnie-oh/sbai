@@ -72,6 +72,8 @@ export interface PersonalityType {
     ink: string;
   };
   illustration: PersonalityIllustration;
+  innateAIName: string;
+  innateAIDescription: string;
 }
 
 export interface SiteCopy {
@@ -220,7 +222,17 @@ export interface QuizResult {
  * Uses specific question answers to disambiguate within a group.
  */
 function resolveSecondary(code: string, answers: Record<number, string>): string {
-  switch (code) {
+  // Map various result codes to the groups defined in secondaryRules
+  const groupKey = (() => {
+    if (["ASCP", "ASCE", "ASCV"].includes(code)) return "ASCP";
+    if (["ADCP", "ADCE", "ADEP"].includes(code)) return "ADCP";
+    if (["ASEV", "ASEP", "FSEV"].includes(code)) return "ASEV";
+    if (["FDCV", "FSCV", "FDEV"].includes(code)) return "FDCV";
+    if (["FDCP"].includes(code)) return "FDCP";
+    return code;
+  })();
+
+  switch (groupKey) {
     case "ASCP": {
       // 企业吸血鬼 vs 复制粘贴侠 vs 一人公司CEO
       if (answers[6] === "c") return "SOLO";
@@ -234,19 +246,19 @@ function resolveSecondary(code: string, answers: Record<number, string>): string
       if (answers[2] === "a" || answers[11] === "a") return "PUAA";
       return "ANTI"; // default
     }
-    case "ASDE": {
+    case "ASEV": {
       // 心碎小狗 vs 命理大师 vs 电子妈宝
       if (answers[18] === "a") return "MING";
       if (answers[7] === "c" && answers[12] === "c") return "LOVE";
       if (answers[18] === "c") return "BABY";
       return "LOVE"; // default
     }
-    case "FSDV": {
+    case "FDCV": {
       // 意识流艺术家 vs 乐子人
       if (answers[9] === "c" || answers[16] === "c") return "MEME";
       return "MUSE"; // default
     }
-    case "FSDP": {
+    case "FDCP": {
       // 提示词诗人 vs 蒸馏大师
       if (answers[13] === "a") return "DIST";
       return "PROMPT"; // default
@@ -256,39 +268,40 @@ function resolveSecondary(code: string, answers: Record<number, string>): string
   }
 }
 
-export function calculateQuizResult(responses: Record<number, string>): QuizResult {
+export function calculateQuizResult(responses: any): QuizResult {
   const totals = Object.fromEntries(poleOrder.map((key) => [key, 0])) as Record<PoleKey, number>;
 
+  // Sum up effects from each response
   for (const question of questions) {
-    const answerId = responses[question.id];
+    // Ensure we handle both numeric and string keys
+    const answerId = responses[question.id] || responses[String(question.id)];
     if (!answerId) continue;
 
-    const option = question.options.find((item) => item.id === answerId);
-    if (!option) continue;
+    const option = question.options.find((item: any) => item.id === answerId);
+    if (!option || !option.effects) continue;
 
     for (const [key, value] of Object.entries(option.effects) as Array<[PoleKey, number]>) {
-      totals[key] += value;
+      if (totals.hasOwnProperty(key)) {
+        totals[key] += value;
+      }
     }
   }
 
+  // Calculate winner for each axis in order
   const axisResults: AxisResult[] = scoringRules.axes.map((axis) => {
     const leftKey = axis.left.key;
     const rightKey = axis.right.key;
-    const leftScore = totals[leftKey];
-    const rightScore = totals[rightKey];
+    const leftScore = totals[leftKey] || 0;
+    const rightScore = totals[rightKey] || 0;
     const total = leftScore + rightScore || 1;
 
-    // PDF rule: >= means left wins (e.g. F >= A → F)
     let winner: PoleKey;
-    if (leftScore >= rightScore) {
+    if (leftScore === 0 && rightScore === 0) {
+      winner = axis.defaultTie;
+    } else if (leftScore >= rightScore) {
       winner = leftKey;
     } else {
       winner = rightKey;
-    }
-
-    // If both are 0, use defaultTie
-    if (leftScore === 0 && rightScore === 0) {
-      winner = axis.defaultTie;
     }
 
     return {
@@ -308,30 +321,30 @@ export function calculateQuizResult(responses: Record<number, string>): QuizResu
     };
   });
 
-  const code = axisResults
-    .sort(
-      (a, b) =>
-        scoringRules.codeOrder.indexOf(a.axisId) - scoringRules.codeOrder.indexOf(b.axisId),
-    )
-    .map((axis) => axis.winner)
+  // Sort axes by codeOrder and join winners to form a 4-letter code
+  const code = scoringRules.codeOrder
+    .map((axisId) => {
+      const axisRes = axisResults.find((a) => a.axisId === axisId);
+      return axisRes ? axisRes.winner : "";
+    })
     .join("");
 
   // Look up in mapping — may be a single string or an array (requires secondary differentiation)
-  const mappingValue = scoringRules.mapping[code];
+  const mappingValue = (scoringRules.mapping as Record<string, any>)[code];
   let personalityKey: string;
 
   if (Array.isArray(mappingValue)) {
-    // Use secondary differentiation logic
     personalityKey = resolveSecondary(code, responses);
   } else if (typeof mappingValue === "string") {
     personalityKey = mappingValue;
   } else {
-    // Fallback: find closest match or default to first personality
-    personalityKey = personalities[0].type;
+    // Fallback: if code is unknown, try to find a personality with the same code string
+    const fallback = personalities.find((p) => p.code === code);
+    personalityKey = fallback ? fallback.type : personalities[0].type;
   }
 
   const personality =
-    personalities.find((item) => item.type === personalityKey) ?? personalities[0];
+    personalities.find((p) => p.type === personalityKey) || personalities[0];
 
   return {
     code,
@@ -339,4 +352,38 @@ export function calculateQuizResult(responses: Record<number, string>): QuizResu
     axes: axisResults,
     totals,
   };
+}
+
+/**
+ * Find 2-3 similar personalities based on camp and dimension distance.
+ */
+export function getSimilarPersonalities(
+  current: PersonalityType,
+  all: PersonalityType[],
+  limit: number = 3,
+): PersonalityType[] {
+  return all
+    .filter((p) => p.type !== current.type) // Exclude current
+    .map((p) => {
+      let score = 0;
+
+      // Rule 1: Same Camp (High priority)
+      if (p.campKey === current.campKey) {
+        score += 10;
+      }
+
+      // Rule 2: Hamming Distance (Similarity between 4-letter codes)
+      const currentCode = current.code;
+      const otherCode = p.code;
+      for (let i = 0; i < 4; i++) {
+        if (currentCode[i] === otherCode[i]) {
+          score += 5;
+        }
+      }
+
+      return { personality: p, score };
+    })
+    .sort((a, b) => b.score - a.score) // Sort by descending score
+    .slice(0, limit)
+    .map((item) => item.personality);
 }
