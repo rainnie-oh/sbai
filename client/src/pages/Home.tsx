@@ -16,6 +16,7 @@ import {
   Share2,
   Sparkles,
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 
 import { PersonaAvatar } from "@/components/ai-bti/PersonaAvatar";
@@ -136,6 +137,27 @@ export default function Home() {
     }
   };
 
+  const downloadAvatar = async () => {
+    const avatarEl = document.getElementById("result-avatar-only");
+    if (!avatarEl || !result) return;
+
+    try {
+      const dataUrl = await toPng(avatarEl, {
+        cacheBust: true,
+        pixelRatio: 4,
+        backgroundColor: "transparent",
+      });
+
+      const link = document.createElement("a");
+      link.download = `ai-bti-avatar-${result.personality.type.toLowerCase()}.png`;
+      link.href = dataUrl;
+      link.click();
+      toast.success("小人形象已保存。");
+    } catch {
+      toast.error("生成图片失败。");
+    }
+  };
+
   const downloadPoster = async () => {
     if (!resultPosterRef.current || !result) return;
 
@@ -143,14 +165,14 @@ export default function Home() {
       const dataUrl = await toPng(resultPosterRef.current, {
         cacheBust: true,
         pixelRatio: 2,
-        backgroundColor: "#fcfaf7",
+        backgroundColor: result.personality.palette.soft,
       });
 
       const link = document.createElement("a");
-      link.download = `ai-bti-${result.personality.type.toLowerCase()}.png`;
+      link.download = `ai-bti-card-${result.personality.type.toLowerCase()}.png`;
       link.href = dataUrl;
       link.click();
-      toast.success("截图已生成。你的电子人格可以外带了。");
+      toast.success("个性卡片已生成。内含专属二维码。");
     } catch {
       toast.error("截图失败。可以稍后再试一次。");
     }
@@ -376,11 +398,14 @@ export default function Home() {
               <div className="flex flex-wrap gap-3">
                 <Button variant="outline" className="rounded-full px-5" onClick={shareResult}>
                   <Share2 className="mr-2 size-4" />
-                  {siteCopy.result.shareLabel}
+                  分享结果
+                </Button>
+                <Button variant="outline" className="rounded-full px-5" onClick={downloadAvatar}>
+                  下载纯小人
                 </Button>
                 <Button className="cta-primary rounded-full px-5" onClick={downloadPoster}>
                   <Download className="mr-2 size-4" />
-                  {siteCopy.result.downloadLabel}
+                  下载人格卡片
                 </Button>
               </div>
             </div>
@@ -415,7 +440,7 @@ export default function Home() {
                         {result.personality.description}
                       </p>
                     </div>
-                    <div className="mx-auto flex justify-center">
+                    <div id="result-avatar-only" className="mx-auto flex justify-center p-4">
                       <PersonaAvatar
                         illustration={result.personality.illustration}
                         size={220}
@@ -431,6 +456,15 @@ export default function Home() {
                     <p className="mt-3 text-base leading-8 text-slate-600 md:text-lg">
                       {result.personality.description}
                     </p>
+                    <div className="mt-8 flex items-center gap-6 rounded-[28px] bg-white/50 p-6 backdrop-blur-sm">
+                      <div className="flex size-18 items-center justify-center rounded-2xl bg-white p-2 shadow-sm">
+                        <QRCodeSVG value={window.location.href} size={64} level="L" marginSize={0} />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-slate-700">扫码测测你的赛博人格</p>
+                        <p className="mt-1 text-xs text-slate-500">{siteCopy.brand.name} · Powered by AI-PTI</p>
+                      </div>
+                    </div>
                   </div>
                   <div className="rounded-[28px] bg-[#f7f3ef] p-5">
                     <p className="text-sm font-bold uppercase tracking-[0.16em] text-slate-500">
@@ -537,7 +571,7 @@ export default function Home() {
               </a>
             ))}
           </nav>
-          <Button className="cta-primary rounded-full px-6 py-5 text-sm font-semibold" onClick={startQuiz}>
+          <Button className="cta-primary rounded-full !px-6 py-5 text-sm font-semibold" onClick={startQuiz}>
             {siteCopy.hero.primaryCta}
           </Button>
         </div>
@@ -547,12 +581,16 @@ export default function Home() {
         <section className="container pt-14 md:pt-18">
           <div className="mx-auto max-w-4xl text-center">
             <p className="section-eyebrow justify-center">{siteCopy.hero.eyebrow}</p>
-            <h1 className="hero-title mt-5">{siteCopy.hero.title}</h1>
+            <h1 className="hero-title mt-5">
+              在AI眼里，
+              <br className="md:hidden" />
+              你是哪种人类
+            </h1>
             <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-500 md:text-lg">
               {siteCopy.hero.description}
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-              <Button className="cta-primary rounded-full px-8 py-6 text-base font-semibold" onClick={startQuiz}>
+              <Button className="cta-primary rounded-full !px-6 py-6 text-base font-semibold" onClick={startQuiz}>
                 {siteCopy.hero.primaryCta}
                 <ArrowRight className="ml-2 size-4" />
               </Button>
@@ -579,7 +617,7 @@ export default function Home() {
               <div className="relative overflow-hidden rounded-[42px] bg-[#eadff0] px-6 py-10 shadow-[0_30px_70px_rgba(80,53,112,0.10)] md:px-10">
                 <div className="pointer-events-none absolute inset-0 opacity-[0.22]">
                   <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center font-display text-[4.4rem] font-black leading-none text-white md:text-[9rem]">
-                    AI-PTI
+                    AI-BTI
                   </div>
                 </div>
                 <div className="relative z-10 grid gap-8 md:grid-cols-4">
@@ -633,7 +671,7 @@ export default function Home() {
                   这不是心理学奇迹，也不打算救赎谁。它只是尽量诚实地总结：当你面对一个永远在线、偶尔靠谱、偶尔离谱的模型时，你到底会变成什么样的人。
                 </p>
                 <div className="mt-8 flex flex-wrap gap-4">
-                  <Button className="cta-primary rounded-full px-8 py-6 text-base font-semibold" onClick={startQuiz}>
+                  <Button className="cta-primary rounded-full !px-6 py-6 text-base font-semibold" onClick={startQuiz}>
                     {siteCopy.hero.primaryCta}
                     <ArrowRight className="ml-2 size-4" />
                   </Button>
@@ -668,7 +706,7 @@ function BrandMark() {
         <span className="rounded-full bg-[#9acc92]" />
       </div>
       <div>
-        <div className="font-brand text-[1.75rem] leading-none text-slate-800">AI-PTI</div>
+        <div className="font-brand text-[1.75rem] leading-none text-slate-800">AI-BTI</div>
         <p className="-mt-0.5 text-xs tracking-[0.12em] text-slate-400">YOUR AI INTERACTION PERSONALITY TEST</p>
       </div>
     </a>
