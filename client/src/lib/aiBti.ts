@@ -387,3 +387,26 @@ export function getSimilarPersonalities(
     .slice(0, limit)
     .map((item) => item.personality);
 }
+
+/**
+ * Get the descriptive traits for each axis of a personality based on its 4-letter code.
+ */
+export function getPersonalityPoles(code: string) {
+  return scoringRules.axes.map((axis, index) => {
+    const winnerKey = code[index] as PoleKey;
+    const isLeft = axis.left.key === winnerKey;
+    const pole = isLeft ? axis.left : axis.right;
+    
+    return {
+      axisId: axis.id,
+      label: axis.id === "economy" ? "消费观" : 
+             axis.id === "control" ? "控制欲" : 
+             axis.id === "emotion" ? "情感值" : "创作力",
+      winnerLabel: pole.labelZh,
+      description: pole.description,
+      isLeft,
+      percent: 100 // Visual only for the meter
+    };
+  });
+}
+

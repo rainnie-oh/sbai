@@ -1,6 +1,6 @@
 {
   "brand": {
-    "name": "AI-PTI",
+    "name": "SBAI",
     "tagline": "AI 交互人格测试",
     "legalNote": "不是科学。只是很像你。"
   },
@@ -89,7 +89,7 @@
   },
   "quiz": {
     "title": "开始测试",
-    "intro": "按平时来答。别演。",
+    "intro": "你和AI到底什么关系",
     "nextLabel": "下一题",
     "restartLabel": "重新来过",
     "submitLabel": "查看结果",
@@ -111,6 +111,6 @@
     "axisTitle": "详细打分",
     "whyTitle": "为什么是你",
     "combinationTitle": "人格映射",
-    "shareText": "我测了 AI-PTI，结果是："
+    "shareText": "我测了 SBAI，结果是："
   }
 }

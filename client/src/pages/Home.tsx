@@ -1,11 +1,4 @@
-/*
-Style reminder for this file:
-- Follow a 16Personalities-like product language: light canvas, generous whitespace, rounded CTA buttons, pastel group blocks, clear hierarchy.
-- Avoid the rejected editorial/archive direction.
-- Keep the tone restrained, internet-native, slightly dark-humored, and not translation-heavy.
-*/
-
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, forwardRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { toPng } from "html-to-image";
 import {
@@ -15,6 +8,8 @@ import {
   RotateCcw,
   Share2,
   Sparkles,
+  CheckCircle2,
+  X
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -22,19 +17,16 @@ import { PersonaAvatar } from "@/components/ai-bti/PersonaAvatar";
 import { Button } from "@/components/ui/button";
 import {
   calculateQuizResult,
+  getPersonalityPoles,
   getSimilarPersonalities,
-  groupedPersonalities,
   personalities,
   questions,
-  scoringRules,
   siteCopy,
   type AxisResult,
   type PersonalityType,
 } from "@/lib/aiBti";
 
-type ViewMode = "landing" | "quiz" | "loading" | "result";
-
-const stagePersonalities = groupedPersonalities.map((group) => group.items[0]);
+type ViewMode = "landing" | "quiz" | "loading" | "result" | "gallery" | "type-detail";
 
 export default function Home() {
   const [view, setView] = useState<ViewMode>("landing");
@@ -42,11 +34,17 @@ export default function Home() {
   const [responses, setResponses] = useState<Record<number, string>>({});
   const [resultCode, setResultCode] = useState<string | null>(null);
   const [loadingLineIndex, setLoadingLineIndex] = useState(0);
-  const resultPosterRef = useRef<HTMLDivElement>(null);
+  const [selectedType, setSelectedType] = useState<PersonalityType | null>(null);
+  const [showPoster, setShowPoster] = useState(false);
+
+  const resultCardRef = useRef<HTMLDivElement>(null);
 
   const answeredCount = useMemo(() => Object.keys(responses).length, [responses]);
+  const isAllAnswered = answeredCount === questions.length;
+  
   const currentQuestion = questions[currentIndex];
   const currentAnswer = currentQuestion ? responses[currentQuestion.id] : undefined;
+  
   const result = useMemo(() => {
     if (!resultCode) return null;
     return calculateQuizResult(responses);
@@ -57,75 +55,85 @@ export default function Home() {
     return getSimilarPersonalities(result.personality, personalities, 3);
   }, [result]);
 
+  const progressPercent = (currentIndex / questions.length) * 100;
+
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [view]);
+  }, [view, currentIndex]);
 
   useEffect(() => {
-    if (view !== "loading") return;
-
-    const lineTimer = window.setInterval(() => {
-      setLoadingLineIndex((prev) => (prev + 1) % siteCopy.loading.lines.length);
-    }, 950);
-
-    const resultTimer = window.setTimeout(() => {
-      const final = calculateQuizResult(responses);
-      setResultCode(final.code);
-      setView("result");
-    }, 1800);
-
-    return () => {
-      window.clearInterval(lineTimer);
-      window.clearTimeout(resultTimer);
-    };
-  }, [responses, view]);
-
-  const progressPercent = Math.round((answeredCount / questions.length) * 100);
+    if (view === "loading") {
+      const interval = setInterval(() => {
+        setLoadingLineIndex((prev) => (prev + 1) % siteCopy.loading.lines.length);
+      }, 2500);
+      return () => clearInterval(interval);
+    }
+  }, [view]);
 
   const startQuiz = () => {
-    setView("quiz");
+    setResponses({});
     setCurrentIndex(0);
+    setResultCode(null);
+    setShowPoster(false);
+    setView("quiz");
+  };
+
+  const restartQuiz = () => {
+    if (view === "result" || view === "type-detail") {
+      startQuiz();
+      return;
+    }
+    if (confirm("确定要重新开始吗？当前的进度会丢失。")) {
+      startQuiz();
+    }
   };
 
   const goToLanding = () => {
+    setResultCode(null);
+    setShowPoster(false);
     setView("landing");
+  };
+
+  const goToGallery = () => {
+    setView("gallery");
+  };
+
+  const onViewDetail = (type: PersonalityType) => {
+    setSelectedType(type);
+    setView("type-detail");
   };
 
   const handleSelect = (optionId: string) => {
     if (!currentQuestion) return;
 
-    setResponses((prev) => ({ ...prev, [currentQuestion.id]: optionId }));
+    setResponses((prev) => ({
+      ...prev,
+      [currentQuestion.id]: optionId,
+    }));
 
     if (currentIndex < questions.length - 1) {
-      window.setTimeout(() => {
-        setCurrentIndex((prev) => Math.min(prev + 1, questions.length - 1));
-      }, 180);
+      setTimeout(() => {
+        setCurrentIndex((prev) => prev + 1);
+      }, 300);
     }
   };
 
   const submitQuiz = () => {
-    if (answeredCount < questions.length) {
-      toast.error("还有题没做完。先把电子人格交代清楚。");
+    if (!isAllAnswered) {
+      toast.error("先把题答完吧，不差这几秒钟。");
       return;
     }
-    setResultCode(null);
-    setLoadingLineIndex(0);
     setView("loading");
-  };
-
-  const restartQuiz = () => {
-    setResponses({});
-    setResultCode(null);
-    setLoadingLineIndex(0);
-    setCurrentIndex(0);
-    setView("landing");
+    setTimeout(() => {
+      setResultCode("DONE");
+      setView("result");
+    }, 5500);
   };
 
   const shareResult = async () => {
     if (!result) return;
-
-    const text = `${siteCopy.result.shareText}${result.personality.nameZh}（${result.personality.type}）——${result.personality.tagline}`;
-
+    const text = `${siteCopy.result.shareText}${result.personality.nameZh} (${result.personality.type})`;
+    
     try {
       if (navigator.share) {
         await navigator.share({
@@ -143,32 +151,32 @@ export default function Home() {
     }
   };
 
-  const downloadPoster = async () => {
-    if (!resultPosterRef.current || !result) return;
-
-    try {
-      const dataUrl = await toPng(resultPosterRef.current, {
-        cacheBust: true,
-        pixelRatio: 2,
-        backgroundColor: "#fcfaf7",
-      });
-
-      const link = document.createElement("a");
-      link.download = `ai-bti-${result.personality.type.toLowerCase()}.png`;
-      link.href = dataUrl;
-      link.click();
-      toast.success("截图已生成。你的电子人格可以外带了。");
-    } catch {
-      toast.error("截图失败。可以稍后再试一次。");
-    }
+  // Switch to native modal share alternative
+  const handleDownloadClick = () => {
+    setShowPoster(true);
   };
+
+  if (view === "gallery") {
+    return <GalleryView onBack={goToLanding} onViewDetail={onViewDetail} />;
+  }
+
+  if (view === "type-detail" && selectedType) {
+    return (
+      <TypeDetailView
+        type={selectedType}
+        onBack={() => setView("gallery")}
+        onRestart={startQuiz}
+        onGoHome={goToLanding}
+      />
+    );
+  }
 
   if (view === "quiz" && currentQuestion) {
     return (
       <div className="min-h-screen bg-background text-foreground">
         <header className="sticky top-0 z-40 border-b border-border/70 bg-background/92 backdrop-blur-xl">
           <div className="container flex items-center justify-between py-4">
-            <BrandMark />
+            <BrandMark onClick={goToLanding} />
             <button className="nav-link" onClick={goToLanding}>
               返回首页
             </button>
@@ -258,12 +266,12 @@ export default function Home() {
                       上一题
                     </Button>
 
-                    {currentIndex === questions.length - 1 ? (
+                    {isAllAnswered || currentIndex === questions.length - 1 ? (
                       <Button
                         onClick={submitQuiz}
-                        className="cta-primary min-w-[160px] rounded-full px-6 py-6 text-sm font-semibold"
+                        className="cta-primary min-w-[160px] rounded-full px-6 py-6 text-sm font-semibold shadow-lg"
                       >
-                        {siteCopy.quiz.submitLabel}
+                        {isAllAnswered ? "立即提交结果" : siteCopy.quiz.submitLabel}
                       </Button>
                     ) : (
                       <Button
@@ -280,7 +288,10 @@ export default function Home() {
 
               <aside className="space-y-4">
                 <div className="panel p-5">
-                  <p className="text-sm font-semibold text-slate-500">答题状态</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-slate-500">答题状态</p>
+                    {isAllAnswered && <CheckCircle2 className="size-4 text-emerald-500" />}
+                  </div>
                   <div className="mt-4 grid grid-cols-5 gap-2">
                     {questions.map((question, index) => {
                       const answered = Boolean(responses[question.id]);
@@ -303,7 +314,6 @@ export default function Home() {
                     })}
                   </div>
                 </div>
-
               </aside>
             </div>
           </div>
@@ -317,7 +327,7 @@ export default function Home() {
       <div className="min-h-screen bg-background text-foreground">
         <header className="border-b border-border/70 bg-background/92 backdrop-blur-xl">
           <div className="container flex items-center justify-between py-4">
-            <BrandMark />
+            <BrandMark onClick={goToLanding} />
             <button className="nav-link" onClick={goToLanding}>
               返回首页
             </button>
@@ -354,9 +364,39 @@ export default function Home() {
   if (view === "result" && result) {
     return (
       <div className="min-h-screen bg-background text-foreground">
+        {/* POSTER MODAL OVERLAY */}
+        <AnimatePresence>
+          {showPoster && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+              onClick={() => setShowPoster(false)}
+            >
+              <div 
+                className="relative max-h-[90vh] overflow-y-auto overflow-x-hidden rounded-[32px] no-scrollbar"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button 
+                  className="absolute right-4 top-4 z-50 flex size-10 items-center justify-center rounded-full bg-white/40 text-slate-800 backdrop-blur-md transition-colors hover:bg-white/60"
+                  onClick={() => setShowPoster(false)}
+                >
+                  <X className="size-5" />
+                </button>
+                <ResultCard result={result} hideStats forExport />
+                
+                <div className="sticky bottom-0 left-0 right-0 p-4 text-center pb-6">
+                  <p className="text-sm font-semibold text-white drop-shadow-md">↑ 手机截图 或 长按图片保存</p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <header className="sticky top-0 z-40 border-b border-border/70 bg-background/92 backdrop-blur-xl">
           <div className="container flex items-center justify-between py-4">
-            <BrandMark />
+            <BrandMark onClick={goToLanding} />
             <div className="flex items-center gap-3">
               <Button variant="outline" className="rounded-full" onClick={goToLanding}>
                 返回首页
@@ -375,61 +415,30 @@ export default function Home() {
                 <Share2 className="mr-2 size-4" />
                 {siteCopy.result.shareLabel}
               </Button>
-              <Button className="cta-primary rounded-full px-5" onClick={downloadPoster}>
+              <Button className="cta-primary rounded-full px-5" onClick={handleDownloadClick}>
                 <Download className="mr-2 size-4" />
                 {siteCopy.result.downloadLabel}
               </Button>
             </div>
 
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
-              <section ref={resultPosterRef} className="panel overflow-hidden p-0">
-                <div
-                  className="relative overflow-hidden px-6 py-8 md:px-10 md:py-10"
-                  style={{ background: result.personality.palette.soft }}
-                >
-                  <div className="absolute inset-x-0 bottom-0 h-24 bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.55)_100%)]" />
-                  <div className="relative z-10 grid gap-8 md:grid-cols-[minmax(0,1fr)_260px] md:items-center">
-                    <div>
-                      <div className="font-display text-xl font-bold uppercase tracking-wider text-slate-500/80 md:text-2xl">
-                        {result.personality.type}
-                      </div>
-                      <h2 className="mt-2 font-display text-[2.8rem] font-bold leading-none text-slate-800 md:text-[3.8rem]">
-                        {result.personality.nameZh}
-                      </h2>
-                      <div className="mt-8">
-                        <div className="inline-block rounded-lg border border-slate-400/20 bg-white/40 px-4 py-2 shadow-sm backdrop-blur-sm">
-                          <p className="font-brand text-sm font-bold italic text-slate-700/80 md:text-base">
-                            “{result.personality.tagline}”
-                          </p>
-                        </div>
-                        <p className="mt-6 max-w-xl text-lg leading-relaxed text-slate-600">
-                          {result.personality.description}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mx-auto flex justify-center">
-                      <PersonaAvatar
-                        illustration={result.personality.illustration}
-                        size={220}
-                        background="rgba(255,255,255,0.18)"
-                      />
-                    </div>
-                  </div>
-                </div>
+            <div className="grid gap-x-12 gap-y-8 xl:grid-cols-[440px_1fr]">
+              {/* Left Column: Visual Overview Card */}
+              <div className="w-full">
+                <ResultCard result={result} hideStats />
+              </div>
 
-                <div className="px-6 py-8 md:px-10 md:py-10">
-                  <p className="section-eyebrow mb-6">{siteCopy.result.axisTitle}</p>
-                  <div className="grid gap-x-12 gap-y-10 md:grid-cols-2">
+              {/* Right Column: Detailed Scrolling & AI Info */}
+              <div className="space-y-8">
+                <section className="panel p-8">
+                  <p className="section-eyebrow mb-8">{siteCopy.result.axisTitle}</p>
+                  <div className="space-y-10">
                     {result.axes.map((axis) => (
                       <div key={axis.axisId} className="flex flex-col">
-                        <div className="mb-3 flex items-center justify-between font-display text-sm font-bold tracking-tight text-slate-700">
-                          <span className={axis.leftPercent >= 50 ? "text-slate-900" : "text-slate-400"}>
-                            {axis.leftLabel} ({axis.leftPercent}%)
-                          </span>
-                          <span className={axis.rightPercent > 50 ? "text-slate-900" : "text-slate-400"}>
-                            {axis.rightLabel} ({axis.rightPercent}%)
-                          </span>
+                        <div className="mb-3 flex items-center justify-between font-display text-base font-bold tracking-tight text-slate-700">
+                          <span>{axis.leftLabel}</span>
+                          <span className="text-slate-400">{axis.rightLabel}</span>
                         </div>
+                        {/* KEEP THE BAR HERE IN RESULTS VIEW */}
                         <AxisMeter axis={axis} />
                         <div className="mt-4 text-left">
                           {axis.leftPercent >= axis.rightPercent ? (
@@ -447,12 +456,10 @@ export default function Home() {
                       </div>
                     ))}
                   </div>
-                </div>
-              </section>
+                </section>
 
-              <aside className="space-y-6">
-                <div className="panel p-8">
-                  <p className="section-eyebrow mb-5">INNATE AI</p>
+                <section className="panel p-8">
+                  <p className="section-eyebrow mb-5">本命 AI</p>
                   <h3 className="font-display text-2xl font-extrabold text-slate-800">
                     {result.personality.innateAIName}
                   </h3>
@@ -461,60 +468,44 @@ export default function Home() {
                       {result.personality.innateAIDescription}
                     </p>
                   </div>
-                  <p className="mt-6 text-xs leading-5 text-slate-400 uppercase tracking-widest font-bold opacity-60">
-                    The Optimal AI Persona
-                  </p>
-                </div>
-              </aside>
+                </section>
+                
+                <section className="mt-4">
+                  <div className="mb-6">
+                    <p className="section-eyebrow">RESISTANCE MATCH</p>
+                    <h2 className="font-display text-2xl font-bold text-slate-800">你可能还像...</h2>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {recommendations.map((item) => (
+                      <div
+                        key={item.type}
+                        className="group relative overflow-hidden rounded-[32px] bg-white p-5 shadow-sm border border-slate-100 transition-all hover:shadow-md cursor-pointer"
+                        onClick={() => onViewDetail(item)}
+                      >
+                         <div className="flex items-center gap-4">
+                          <div className="w-16 h-16 relative">
+                            <PersonaAvatar type={item.type} size="100%" radius="8px" />
+                          </div>
+                          <div>
+                             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                              {item.type}
+                            </span>
+                            <h3 className="font-bold text-slate-800">{item.nameZh}</h3>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </div>
             </div>
 
-            <section className="mt-10">
-              <div className="mb-6">
-                <p className="section-eyebrow">RESISTANCE MATCH</p>
-                <h2 className="font-display text-3xl font-bold text-slate-800">你可能还像...</h2>
-                <p className="mt-2 text-sm text-slate-500">基于你的互动风格，以下人格也与你高度契合</p>
-              </div>
-              <div className="grid gap-6 md:grid-cols-3">
-                {recommendations.map((item) => (
-                  <div
-                    key={item.type}
-                    className="group relative overflow-hidden rounded-[32px] bg-white p-6 shadow-sm border border-slate-100 transition-all hover:shadow-md"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="relative">
-                        <div 
-                          className="absolute inset-0 rounded-full blur-xl opacity-20"
-                          style={{ backgroundColor: item.palette.accent }}
-                        />
-                        <PersonaAvatar illustration={item.illustration} size={80} />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                            {item.type}
-                          </span>
-                        </div>
-                        <h3 className="mt-0.5 text-xl font-bold text-slate-800">{item.nameZh}</h3>
-                      </div>
-                    </div>
-                    <p className="mt-4 text-sm leading-relaxed text-slate-500 italic">
-                      “{item.tagline}”
-                    </p>
-                    <div 
-                      className="absolute bottom-0 left-0 h-1 w-full opacity-30"
-                      style={{ backgroundColor: item.palette.accent }}
-                    />
-                  </div>
-                ))}
-              </div>
-              
-              <div className="mt-12 flex justify-center">
-                <button className="btn-secondary rounded-full px-8 py-4 flex items-center gap-2" onClick={restartQuiz}>
-                  <RotateCcw className="size-4" />
-                  {siteCopy.result.retakeLabel}
-                </button>
-              </div>
-            </section>
+            <div className="mt-16 flex justify-center">
+              <button className="btn-secondary rounded-full px-8 py-4 flex items-center gap-2" onClick={restartQuiz}>
+                <RotateCcw className="size-4" />
+                {siteCopy.result.retakeLabel}
+              </button>
+            </div>
           </div>
         </main>
       </div>
@@ -525,13 +516,14 @@ export default function Home() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-40 border-b border-border/70 bg-background/92 backdrop-blur-xl">
         <div className="container flex items-center justify-between py-4">
-          <BrandMark />
+          <BrandMark onClick={goToLanding} />
           <nav className="hidden items-center gap-8 lg:flex">
-            {siteCopy.nav.map((item) => (
-              <a key={item.href} href={item.href} className="nav-link">
-                {item.label}
-              </a>
-            ))}
+            <button className="nav-link" onClick={goToGallery}>
+              16 人格
+            </button>
+            <button className="nav-link" onClick={startQuiz}>
+              开始测试
+            </button>
           </nav>
           <Button className="cta-primary rounded-full px-6 py-5 text-sm font-semibold" onClick={startQuiz}>
             {siteCopy.hero.primaryCta}
@@ -540,7 +532,7 @@ export default function Home() {
       </header>
 
       <main>
-        <section className="container pt-14 md:pt-18">
+        <section className="container pt-14 md:pt-18 pb-10">
           <div className="mx-auto max-w-4xl text-center">
             <p className="section-eyebrow justify-center">{siteCopy.hero.eyebrow}</p>
             <h1 className="hero-title mt-5">{siteCopy.hero.title}</h1>
@@ -552,9 +544,9 @@ export default function Home() {
                 {siteCopy.hero.primaryCta}
                 <ArrowRight className="ml-2 size-4" />
               </Button>
-              <a href="#types" className="cta-secondary">
+              <button onClick={goToGallery} className="cta-secondary">
                 {siteCopy.hero.secondaryCta}
-              </a>
+              </button>
             </div>
             <div className="mt-10 grid gap-3 sm:grid-cols-3">
               {siteCopy.hero.stats.map((stat) => (
@@ -568,90 +560,258 @@ export default function Home() {
             </div>
           </div>
         </section>
-
-        <section className="hero-stage-wrap mt-16 md:mt-20">
-          <div className="hero-stage">
-            <div className="container py-16 md:py-20">
-              <div className="relative overflow-hidden rounded-[42px] bg-[#eadff0] px-6 py-10 shadow-[0_30px_70px_rgba(80,53,112,0.10)] md:px-10">
-                <div className="pointer-events-none absolute inset-0 opacity-[0.22]">
-                  <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center font-display text-[4.4rem] font-black leading-none text-white md:text-[9rem]">
-                    AI-PTI
-                  </div>
-                </div>
-                <div className="relative z-10 grid gap-8 md:grid-cols-4">
-                  {stagePersonalities.map((item) => (
-                    <div key={item.type} className="text-center">
-                      <div className="mb-4 flex justify-center">
-                        <PersonaAvatar illustration={item.illustration} size={168} />
-                      </div>
-                      <h3 className="text-2xl font-bold text-slate-800">{item.nameZh}</h3>
-                      <p className="mt-1 text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
-                        {item.type}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-
-        <section id="types" className="bg-[#f8f4ef] py-16 md:py-22">
-          <div className="container">
-            <div className="mx-auto max-w-3xl text-center">
-              <p className="section-eyebrow justify-center">PERSONALITY TYPES</p>
-              <h2 className="mt-4 font-display text-3xl font-bold text-slate-800 md:text-4xl">
-                {siteCopy.typesIntro.title}
-              </h2>
-              <p className="mt-5 text-base leading-8 text-slate-500 md:text-lg">
-                {siteCopy.typesIntro.description}
-              </p>
-            </div>
-
-            <div className="mt-10 space-y-10">
-              {groupedPersonalities.map((group) => (
-                <CampSection key={group.key} title={group.meta.label} description={group.meta.description} soft={group.meta.soft} items={group.items} />
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section id="test" className="container py-16 md:py-22">
-          <div className="panel overflow-hidden p-0">
-            <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_320px] md:items-center">
-              <div className="px-8 py-10 md:px-10 md:py-12">
-                <p className="section-eyebrow">START</p>
-                <h2 className="mt-4 font-display text-3xl font-bold text-slate-800 md:text-4xl">
-                  现在开始，把你和 AI 之间那点事说清楚。
-                </h2>
-                <p className="mt-5 max-w-2xl text-base leading-8 text-slate-500 md:text-lg">
-                  这不是心理学奇迹，也不打算救赎谁。它只是尽量诚实地总结：当你面对一个永远在线、偶尔靠谱、偶尔离谱的模型时，你到底会变成什么样的人。
-                </p>
-                <div className="mt-8 flex flex-wrap gap-4">
-                  <Button className="cta-primary rounded-full px-8 py-6 text-base font-semibold" onClick={startQuiz}>
-                    {siteCopy.hero.primaryCta}
-                    <ArrowRight className="ml-2 size-4" />
-                  </Button>
-                  <button className="cta-secondary" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-                    回到顶部
-                  </button>
-                </div>
-              </div>
-              <div className="flex justify-center px-6 pb-10 md:px-10 md:py-10">
-                <PersonaAvatar illustration={groupedPersonalities[1].items[1].illustration} size={220} />
-              </div>
-            </div>
-          </div>
-        </section>
       </main>
     </div>
   );
 }
 
-function BrandMark() {
+/**
+ * COMPACT RESULTS CARD COMPONENT
+ */
+const ResultCard = forwardRef<HTMLDivElement, { result: any; hideStats?: boolean; forExport?: boolean }>(
+  ({ result, hideStats, forExport }, ref) => {
+    const poles = getPersonalityPoles(result.code);
+    
+    return (
+      <div 
+        ref={ref}
+        className="flex flex-col bg-white panel overflow-hidden p-0" 
+        style={{ width: forExport ? 400 : '100%' }}
+      >
+        <div 
+          className="relative px-8 py-10 text-center pb-8"
+          style={{ background: result.personality.palette.soft }}
+        >
+          <div className="relative z-10 w-full text-center">
+             {forExport && <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500/50 mb-3">SBAI PERSONALITY TEST</p>}
+            <p className="font-display text-lg font-bold text-slate-400/80 tracking-widest">{result.personality.type}</p>
+            <h1 className="mt-1 font-display text-[2.5rem] leading-none font-black text-slate-800 tracking-tight">{result.personality.nameZh}</h1>
+            <div className="mt-6 inline-block rounded-2xl border border-slate-400/10 bg-white/40 px-5 py-2 backdrop-blur-md">
+               <p className="text-sm font-bold italic text-slate-600 leading-relaxed">
+                “{result.personality.tagline}”
+              </p>
+            </div>
+          </div>
+          
+          <div className="relative z-10 mt-6 w-full">
+             <PersonaAvatar type={result.personality.type} radius="12px" className="w-full h-auto shadow-md" />
+          </div>
+
+          <div className="relative z-10 mt-6 rounded-3xl bg-white/60 p-5 border border-white/40 backdrop-blur-sm text-left shadow-sm">
+            <p className="text-sm leading-relaxed text-slate-700">
+              {result.personality.description}
+            </p>
+          </div>
+        </div>
+
+        {(!hideStats || forExport) && (
+          <div className="bg-white p-8 pb-10">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-6">
+              {poles.map((pole) => (
+                <div key={pole.axisId} className="flex flex-col items-center text-center p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">{pole.label}</p>
+                  <p className="text-sm font-black text-slate-800">{pole.winnerLabel}</p>
+                </div>
+              ))}
+            </div>
+
+            {forExport && (
+              <div className="mt-8 flex items-center justify-between pt-6 border-t border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="size-8 rounded-lg bg-slate-100 p-1.5 opacity-60">
+                    <BrandMark minimal />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-300">SCAN TO TEST</p>
+                  </div>
+                </div>
+                <div className="size-12 rounded-lg bg-slate-100 p-2 flex items-center justify-center opacity-40">
+                  <span className="text-[8px] font-bold text-slate-400 leading-tight text-center">QR<br/>CODE</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+);
+
+ResultCard.displayName = "ResultCard";
+
+function GalleryView({ 
+  onBack, 
+  onViewDetail 
+}: { 
+  onBack: () => void; 
+  onViewDetail: (type: PersonalityType) => void;
+}) {
   return (
-    <a href="#" className="flex items-center gap-3">
+    <div className="min-h-screen bg-[#fcfaf7] text-foreground">
+      <header className="sticky top-0 z-40 border-b border-border/70 bg-background/92 backdrop-blur-xl">
+        <div className="container flex items-center justify-between py-4">
+          <BrandMark onClick={onBack} />
+          <Button variant="outline" className="rounded-full" onClick={onBack}>
+            <ChevronLeft className="mr-2 size-4" />
+            返回首页
+          </Button>
+        </div>
+      </header>
+
+      <main className="container py-12 md:py-16">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-12">
+            <p className="section-eyebrow">TYPE LIBRARY</p>
+            <h1 className="mt-4 font-display text-4xl font-bold text-slate-800 md:text-5xl border-l-4 border-[#8d77c5] pl-6">
+              16 种 AI 交互人格
+            </h1>
+            <p className="mt-6 max-w-2xl text-lg text-slate-500">
+              探索你在数字世界中的真实映射。每种人格都代表了一种独特的互动哲学与协作模式。
+            </p>
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {personalities.map((item) => (
+              <div 
+                key={item.type} 
+                className="group relative overflow-hidden rounded-[32px] bg-white p-0 shadow-sm border border-slate-100 cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1"
+                onClick={() => onViewDetail(item)}
+              >
+                <div 
+                  className="relative h-64 w-full flex items-center justify-center p-8 transition-colors group-hover:bg-slate-50/50"
+                  style={{ backgroundColor: item.palette.soft }}
+                >
+                  <PersonaAvatar type={item.type} radius="12px" />
+                </div>
+                
+                <div className="p-6 text-center">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    {item.type}
+                  </span>
+                  <h3 className="mt-2 text-2xl font-black text-slate-800 leading-tight">
+                    {item.nameZh}
+                  </h3>
+                  <p className="mt-4 text-sm leading-relaxed text-slate-500 italic">
+                    “{item.tagline}”
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+function TypeDetailView({ 
+  type, 
+  onBack,
+  onRestart,
+  onGoHome
+}: { 
+  type: PersonalityType; 
+  onBack: () => void;
+  onRestart: () => void;
+  onGoHome: () => void;
+}) {
+  const poles = getPersonalityPoles(type.code);
+
+  return (
+    <div className="min-h-screen bg-[#fcfaf7] text-foreground">
+      <header className="sticky top-0 z-40 border-b border-border/70 bg-background/92 backdrop-blur-xl">
+        <div className="container flex items-center justify-between py-4">
+          <BrandMark onClick={onGoHome} />
+          <div className="flex items-center gap-3">
+            <Button variant="outline" className="rounded-full" onClick={onBack}>
+              返回列表
+            </Button>
+            <Button className="cta-primary rounded-full px-5" onClick={onRestart}>
+              去测一个
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="container py-8 md:py-12">
+        <div className="mx-auto max-w-6xl">
+          <div className="grid gap-8 xl:grid-cols-[440px_1fr]">
+            {/* LEFT EMPHASIZED CARD */}
+            <section className="w-full">
+               <div className="flex flex-col bg-white panel overflow-hidden p-0 relative shadow-sm border border-slate-100">
+                <div 
+                  className="relative px-8 py-10 text-center pb-8"
+                  style={{ background: type.palette.soft }}
+                >
+                  <div className="relative z-10 w-full text-center">
+                    <p className="font-display text-lg font-bold text-slate-400/80 tracking-widest">{type.type}</p>
+                    <h1 className="mt-1 font-display text-[2.5rem] leading-none font-black text-slate-800 tracking-tight">{type.nameZh}</h1>
+                    <div className="mt-6 inline-block rounded-2xl border border-slate-400/10 bg-white/40 px-5 py-2 backdrop-blur-md">
+                       <p className="text-sm font-bold italic text-slate-600 leading-relaxed">
+                        “{type.tagline}”
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="relative z-10 mt-6 w-full">
+                     <PersonaAvatar type={type.type} radius="12px" className="w-full h-auto shadow-md" />
+                  </div>
+
+                  {/* Description moved tightly under the image */}
+                  <div className="relative z-10 mt-6 rounded-3xl bg-white/60 p-5 border border-white/40 backdrop-blur-sm shadow-sm text-left">
+                    <p className="text-sm leading-relaxed text-slate-700">
+                      {type.description}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* RIGHT CONTEXT */}
+            <div className="space-y-8">
+              <section className="panel p-8">
+                <p className="section-eyebrow mb-8">核心特质 / DIMENSIONS</p>
+                <div className="space-y-8">
+                  {poles.map((pole) => (
+                    <div key={pole.axisId} className="flex flex-col border-b border-slate-100 last:border-0 pb-6 last:pb-0">
+                      <div className="mb-2 flex items-center justify-between font-display text-base font-bold tracking-tight text-slate-700">
+                        <span>{pole.label}：<span className="text-slate-900">{pole.winnerLabel}</span></span>
+                      </div>
+                      
+                      {/* NOTE: REMOVED <AxisMeter> FOR GALLERY DETAIL! NO GRADIENT BAR SHAPE. */}
+                      
+                      <div className="mt-2">
+                        <p className="text-sm leading-relaxed text-slate-500">
+                          {pole.description}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <aside className="panel p-8">
+                <p className="section-eyebrow mb-5">本命 AI</p>
+                <h3 className="font-display text-2xl font-extrabold text-slate-800">
+                  {type.innateAIName}
+                </h3>
+                <div className="mt-6 rounded-3xl bg-slate-50 p-6 border border-slate-100">
+                  <p className="text-base leading-relaxed text-slate-600">
+                    {type.innateAIDescription}
+                  </p>
+                </div>
+              </aside>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+function BrandMark({ onClick, minimal }: { onClick?: () => void; minimal?: boolean }) {
+  const content = (
+    <>
       <div className="relative grid size-9 grid-cols-3 grid-rows-3 gap-[3px] rounded-full bg-white p-[3px] shadow-[0_10px_24px_rgba(29,46,72,0.08)]">
         <span className="rounded-full bg-[#8d77c5]" />
         <span className="rounded-full bg-[#4ca8af]" />
@@ -661,115 +821,39 @@ function BrandMark() {
         <span className="rounded-full bg-[#9e8acc]" />
         <span className="rounded-full bg-[#7cc6cc]" />
         <span className="rounded-full bg-[#d8b35f]" />
-        <span className="rounded-full bg-[#9acc92]" />
+        <span className="rounded-full bg-[#e8e1f0]" />
       </div>
-      <div>
-        <div className="font-brand text-[1.75rem] leading-none text-slate-800">AI-PTI</div>
-        <p className="-mt-0.5 text-xs tracking-[0.12em] text-slate-400">YOUR AI INTERACTION PERSONALITY TEST</p>
-      </div>
-    </a>
+      {!minimal && (
+        <span className="font-display text-xl font-black tracking-tight text-slate-800">
+          SBAI
+        </span>
+      )}
+    </>
   );
+
+  if (onClick) {
+    return (
+      <button onClick={onClick} className="flex items-center gap-3 outline-none hover:opacity-80 transition-opacity">
+        {content}
+      </button>
+    );
+  }
+
+  return <div className="flex items-center gap-3">{content}</div>;
 }
 
-function FeatureCard({
-  title,
-  description,
-  tone,
-}: {
-  title: string;
-  description: string;
-  tone: "purple" | "teal" | "green" | "gold";
-}) {
-  const tones = {
-    purple: "bg-[#f2ebfb] text-[#5d4c7d]",
-    teal: "bg-[#e8f5f4] text-[#2f6b6d]",
-    green: "bg-[#eff8eb] text-[#4d7a47]",
-    gold: "bg-[#faf1df] text-[#7a5c27]",
-  };
-
+function AxisMeter({ axis }: { axis: AxisResult }) {
   return (
-    <div className="panel p-6">
-      <div className={`inline-flex rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] ${tones[tone]}`}>
-        {title}
-      </div>
-      <p className="mt-4 text-sm leading-7 text-slate-500">{description}</p>
-    </div>
-  );
-}
-
-function CampSection({
-  title,
-  description,
-  soft,
-  items,
-}: {
-  title: string;
-  description: string;
-  soft: string;
-  items: PersonalityType[];
-}) {
-  return (
-    <section className="rounded-[36px] p-6 md:p-8" style={{ background: soft }}>
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="section-eyebrow">GROUP</p>
-          <h3 className="mt-3 font-display text-3xl font-bold text-slate-800">{title}</h3>
-        </div>
-        <p className="max-w-2xl text-sm leading-7 text-slate-500 md:text-base">{description}</p>
-      </div>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {items.map((item) => (
-          <article key={item.type} className="type-card h-full bg-white/90">
-            <div className="flex justify-center">
-              <PersonaAvatar illustration={item.illustration} size={140} />
-            </div>
-            <div className="mt-2 text-center">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">{item.type}</p>
-              <h4 className="mt-2 text-2xl font-bold text-slate-800">{item.nameZh}</h4>
-              <p className="mt-1 text-sm font-semibold text-slate-500">{item.subtitle}</p>
-            </div>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function AxisMeter({ axis, compact = false }: { axis: AxisResult; compact?: boolean }) {
-  return (
-    <div>
-      <div className={`relative overflow-hidden rounded-full ${compact ? "h-3" : "h-4"} bg-[#ece7e1]`}>
-        <div
-          className="absolute left-0 top-0 h-full"
-          style={{ width: `${axis.leftPercent}%`, background: "linear-gradient(90deg,#4ca8af 0%,#8d77c5 100%)" }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function InfoList({
-  title,
-  items,
-  tone,
-}: {
-  title: string;
-  items: string[];
-  tone: "good" | "risk";
-}) {
-  const dotColor = tone === "good" ? "bg-[#79b56e]" : "bg-[#d1a24d]";
-
-  return (
-    <div>
-      <p className="section-eyebrow">{title}</p>
-      <div className="mt-4 space-y-3">
-        {items.map((item) => (
-          <div key={item} className="flex items-start gap-3 rounded-[22px] bg-[#f7f3ef] px-4 py-4 text-sm leading-7 text-slate-600">
-            <span className={`mt-2 size-2 shrink-0 rounded-full ${dotColor}`} />
-            <span>{item}</span>
-          </div>
-        ))}
-      </div>
+    <div className="relative h-4 w-full overflow-hidden rounded-full bg-[#ece7e1]">
+      <div
+        className="absolute h-full bg-[#4ca8af] transition-all duration-1000"
+        style={{ width: `${axis.leftPercent}%`, left: 0 }}
+      />
+      <div
+        className="absolute h-full bg-[#8d77c5] transition-all duration-1000 opacity-60"
+        style={{ width: `${axis.rightPercent}%`, right: 0 }}
+      />
+      <div className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-white/40" />
     </div>
   );
 }
