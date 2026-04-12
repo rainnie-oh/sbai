@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   X
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 
 import { PersonaAvatar } from "@/components/ai-bti/PersonaAvatar";
@@ -151,7 +152,6 @@ export default function Home() {
     }
   };
 
-  // Switch to native modal share alternative
   const handleDownloadClick = () => {
     setShowPoster(true);
   };
@@ -364,7 +364,6 @@ export default function Home() {
   if (view === "result" && result) {
     return (
       <div className="min-h-screen bg-background text-foreground">
-        {/* POSTER MODAL OVERLAY */}
         <AnimatePresence>
           {showPoster && (
             <motion.div 
@@ -422,12 +421,10 @@ export default function Home() {
             </div>
 
             <div className="grid gap-x-12 gap-y-8 xl:grid-cols-[440px_1fr]">
-              {/* Left Column: Visual Overview Card */}
               <div className="w-full">
                 <ResultCard result={result} hideStats />
               </div>
 
-              {/* Right Column: Detailed Scrolling & AI Info */}
               <div className="space-y-8">
                 <section className="panel p-8">
                   <p className="section-eyebrow mb-8">{siteCopy.result.axisTitle}</p>
@@ -438,7 +435,6 @@ export default function Home() {
                           <span>{axis.leftLabel}</span>
                           <span className="text-slate-400">{axis.rightLabel}</span>
                         </div>
-                        {/* KEEP THE BAR HERE IN RESULTS VIEW */}
                         <AxisMeter axis={axis} />
                         <div className="mt-4 text-left">
                           {axis.leftPercent >= axis.rightPercent ? (
@@ -623,10 +619,11 @@ const ResultCard = forwardRef<HTMLDivElement, { result: any; hideStats?: boolean
                   </div>
                   <div className="text-left">
                     <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-300">SCAN TO TEST</p>
+                    <p className="text-[10px] font-bold text-slate-400 mt-0.5">SBAI Personality</p>
                   </div>
                 </div>
-                <div className="size-12 rounded-lg bg-slate-100 p-2 flex items-center justify-center opacity-40">
-                  <span className="text-[8px] font-bold text-slate-400 leading-tight text-center">QR<br/>CODE</span>
+                <div className="size-16 rounded-lg bg-white p-2 shadow-sm flex items-center justify-center">
+                  <QRCodeSVG value={window.location.href} size={48} level="L" />
                 </div>
               </div>
             )}
@@ -736,7 +733,6 @@ function TypeDetailView({
       <main className="container py-8 md:py-12">
         <div className="mx-auto max-w-6xl">
           <div className="grid gap-8 xl:grid-cols-[440px_1fr]">
-            {/* LEFT EMPHASIZED CARD */}
             <section className="w-full">
                <div className="flex flex-col bg-white panel overflow-hidden p-0 relative shadow-sm border border-slate-100">
                 <div 
@@ -757,7 +753,6 @@ function TypeDetailView({
                      <PersonaAvatar type={type.type} radius="12px" className="w-full h-auto shadow-md" />
                   </div>
 
-                  {/* Description moved tightly under the image */}
                   <div className="relative z-10 mt-6 rounded-3xl bg-white/60 p-5 border border-white/40 backdrop-blur-sm shadow-sm text-left">
                     <p className="text-sm leading-relaxed text-slate-700">
                       {type.description}
@@ -767,7 +762,6 @@ function TypeDetailView({
               </div>
             </section>
 
-            {/* RIGHT CONTEXT */}
             <div className="space-y-8">
               <section className="panel p-8">
                 <p className="section-eyebrow mb-8">核心特质 / DIMENSIONS</p>
@@ -777,8 +771,6 @@ function TypeDetailView({
                       <div className="mb-2 flex items-center justify-between font-display text-base font-bold tracking-tight text-slate-700">
                         <span>{pole.label}：<span className="text-slate-900">{pole.winnerLabel}</span></span>
                       </div>
-                      
-                      {/* NOTE: REMOVED <AxisMeter> FOR GALLERY DETAIL! NO GRADIENT BAR SHAPE. */}
                       
                       <div className="mt-2">
                         <p className="text-sm leading-relaxed text-slate-500">
