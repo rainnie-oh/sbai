@@ -37,6 +37,8 @@ export default function Home() {
   const [loadingLineIndex, setLoadingLineIndex] = useState(0);
   const [selectedType, setSelectedType] = useState<PersonalityType | null>(null);
   const [showPoster, setShowPoster] = useState(false);
+  const [posterUrl, setPosterUrl] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const resultCardRef = useRef<HTMLDivElement>(null);
 
@@ -152,8 +154,31 @@ export default function Home() {
     }
   };
 
-  const handleDownloadClick = () => {
+  const handleGeneratePoster = async () => {
     setShowPoster(true);
+    setPosterUrl(null);
+    setIsGenerating(true);
+    
+    // Allow animation/mount to complete
+    setTimeout(async () => {
+      if (resultCardRef.current) {
+        try {
+          // Small buffer for QR code / avatar to settle
+          await new Promise(r => setTimeout(r, 600));
+          const dataUrl = await toPng(resultCardRef.current, { 
+            cacheBust: true,
+            pixelRatio: 2,
+            backgroundColor: '#ffffff'
+          });
+          setPosterUrl(dataUrl);
+        } catch (err) {
+          console.error("Poster generation failed", err);
+          toast.error("生成失败，请尝试手动截屏。");
+        } finally {
+          setIsGenerating(false);
+        }
+      }
+    }, 500);
   };
 
   if (view === "gallery") {
@@ -177,9 +202,9 @@ export default function Home() {
         <header className="sticky top-0 z-40 border-b border-border/70 bg-background/92 backdrop-blur-xl">
           <div className="container flex items-center justify-between py-4">
             <BrandMark onClick={goToLanding} />
-            <button className="nav-link" onClick={goToLanding}>
+            <Button variant="outline" className="rounded-full" onClick={goToLanding}>
               返回首页
-            </button>
+            </Button>
           </div>
         </header>
 
@@ -256,13 +281,13 @@ export default function Home() {
                   </div>
 
                   <div className="mt-8 flex items-center justify-between gap-4 border-t border-border/70 pt-6">
-                    <Button
+                   <Button
                       variant="outline"
-                      className="rounded-full border-slate-300 px-5 py-6 text-sm font-semibold text-slate-600"
+                      className="rounded-full border-slate-300 !px-6 py-6 text-sm font-semibold text-slate-600"
                       onClick={() => setCurrentIndex((prev) => Math.max(prev - 1, 0))}
                       disabled={currentIndex === 0}
                     >
-                      <ChevronLeft className="mr-2 size-4" />
+                      <ChevronLeft className="size-4" />
                       上一题
                     </Button>
 
@@ -328,9 +353,9 @@ export default function Home() {
         <header className="border-b border-border/70 bg-background/92 backdrop-blur-xl">
           <div className="container flex items-center justify-between py-4">
             <BrandMark onClick={goToLanding} />
-            <button className="nav-link" onClick={goToLanding}>
+            <Button variant="outline" className="rounded-full" onClick={goToLanding}>
               返回首页
-            </button>
+            </Button>
           </div>
         </header>
 
@@ -374,7 +399,7 @@ export default function Home() {
               onClick={() => setShowPoster(false)}
             >
               <div 
-                className="relative max-h-[90vh] overflow-y-auto overflow-x-hidden rounded-[32px] no-scrollbar"
+                className="relative max-h-[90vh] overflow-y-auto overflow-x-visible rounded-[32px] no-scrollbar"
                 onClick={(e) => e.stopPropagation()}
               >
                 <button 
@@ -383,10 +408,38 @@ export default function Home() {
                 >
                   <X className="size-5" />
                 </button>
-                <ResultCard result={result} hideStats forExport />
+
+                <div className="relative group min-h-[400px] flex items-center justify-center">
+                  {isGenerating && (
+                    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/60 rounded-[32px] backdrop-blur-sm">
+                      <div className="loading-rings scale-75 mb-4">
+                        <span />
+                        <span />
+                        <span />
+                      </div>
+                      <p className="text-sm font-bold text-slate-500">正在雕琢你的灵魂卡片...</p>
+                    </div>
+                  )}
+                  
+                  {posterUrl ? (
+                    <img 
+                      src={posterUrl} 
+                      alt="SBAI Personality Card" 
+                      className="w-full h-auto rounded-[32px] shadow-2xl animate-in fade-in zoom-in duration-500"
+                    />
+                  ) : (
+                    <div className={isGenerating ? "opacity-30 scale-95 transition-all duration-500" : "opacity-100"}>
+                      <ResultCard ref={resultCardRef} result={result} hideStats forExport />
+                    </div>
+                  )}
+                </div>
                 
-                <div className="sticky bottom-0 left-0 right-0 p-4 text-center pb-6">
-                  <p className="text-sm font-semibold text-white drop-shadow-md">↑ 手机截图 或 长按图片保存</p>
+                <div className="p-4 text-center pb-6">
+                  {posterUrl ? (
+                     <p className="text-sm font-semibold text-white drop-shadow-md animate-pulse">↑ 长按图片保存 或 手机截图</p>
+                  ) : isGenerating ? (
+                     <p className="text-sm font-semibold text-white/50">生成中，请稍后...</p>
+                  ) : null}
                 </div>
               </div>
             </motion.div>
@@ -409,48 +462,59 @@ export default function Home() {
 
         <main className="container py-8 md:py-12">
           <div className="mx-auto max-w-6xl">
-            <div className="mb-6 flex flex-wrap items-center justify-end gap-3">
-              <Button variant="outline" className="rounded-full px-5" onClick={shareResult}>
-                <Share2 className="mr-2 size-4" />
-                {siteCopy.result.shareLabel}
-              </Button>
-              <Button className="cta-primary rounded-full px-5" onClick={handleDownloadClick}>
-                <Download className="mr-2 size-4" />
-                {siteCopy.result.downloadLabel}
-              </Button>
-            </div>
-
             <div className="grid gap-x-12 gap-y-8 xl:grid-cols-[440px_1fr]">
-              <div className="w-full">
+              <div className="xl:col-start-1 xl:row-start-1 space-y-8">
                 <ResultCard result={result} hideStats />
+                
+                {/* Mobile-only Sharing Buttons */}
+                <div className="flex flex-wrap items-center justify-center gap-3 xl:hidden">
+                  <Button variant="outline" className="rounded-full px-5" onClick={shareResult}>
+                    <Share2 className="size-4" />
+                    {siteCopy.result.shareLabel}
+                  </Button>
+                  <Button className="cta-primary rounded-full px-5" onClick={handleGeneratePoster}>
+                    <Download className="size-4" />
+                    {siteCopy.result.downloadLabel}
+                  </Button>
+                </div>
               </div>
 
-              <div className="space-y-8">
+              <div className="xl:col-start-2 xl:row-span-2 space-y-8">
                 <section className="panel p-8">
                   <p className="section-eyebrow mb-8">{siteCopy.result.axisTitle}</p>
                   <div className="space-y-10">
-                    {result.axes.map((axis) => (
-                      <div key={axis.axisId} className="flex flex-col">
-                        <div className="mb-3 flex items-center justify-between font-display text-base font-bold tracking-tight text-slate-700">
-                          <span>{axis.leftLabel}</span>
-                          <span className="text-slate-400">{axis.rightLabel}</span>
+                    {result.axes.map((axis) => {
+                      const title = axis.axisId === "economy" ? "消费观" : 
+                                  axis.axisId === "control" ? "控制欲" : 
+                                  axis.axisId === "emotion" ? "情感值" : "创作力";
+                      return (
+                        <div key={axis.axisId} className="flex flex-col">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">{title}</p>
+                          <div className="mb-3 flex items-center justify-between font-display text-base font-bold tracking-tight">
+                            <span className={axis.leftPercent >= axis.rightPercent ? "text-slate-800" : "text-slate-400"}>
+                              {axis.leftLabel}
+                            </span>
+                            <span className={axis.rightPercent > axis.leftPercent ? "text-slate-800" : "text-slate-400"}>
+                              {axis.rightLabel}
+                            </span>
+                          </div>
+                          <AxisMeter axis={axis} />
+                          <div className="mt-4 text-left">
+                            {axis.leftPercent >= axis.rightPercent ? (
+                              <p className="text-sm leading-relaxed text-slate-500">
+                                <span className="font-bold text-slate-700">【{axis.leftLabel}】</span>
+                                {axis.leftDescription}
+                              </p>
+                            ) : (
+                              <p className="text-sm leading-relaxed text-slate-500">
+                                <span className="font-bold text-slate-700">【{axis.rightLabel}】</span>
+                                {axis.rightDescription}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        <AxisMeter axis={axis} />
-                        <div className="mt-4 text-left">
-                          {axis.leftPercent >= axis.rightPercent ? (
-                            <p className="text-sm leading-relaxed text-slate-500">
-                              <span className="font-bold text-slate-700">【{axis.leftLabel}】</span>
-                              {axis.leftDescription}
-                            </p>
-                          ) : (
-                            <p className="text-sm leading-relaxed text-slate-500">
-                              <span className="font-bold text-slate-700">【{axis.rightLabel}】</span>
-                              {axis.rightDescription}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </section>
 
@@ -465,13 +529,15 @@ export default function Home() {
                     </p>
                   </div>
                 </section>
-                
-                <section className="mt-4">
+              </div>
+
+              <div className="xl:col-start-1 xl:row-start-2">
+                <section className="mt-4 max-w-[400px] mx-auto">
                   <div className="mb-6">
                     <p className="section-eyebrow">RESISTANCE MATCH</p>
                     <h2 className="font-display text-2xl font-bold text-slate-800">你可能还像...</h2>
                   </div>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid gap-4 grid-cols-1">
                     {recommendations.map((item) => (
                       <div
                         key={item.type}
@@ -496,8 +562,18 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="mt-16 flex justify-center">
-              <button className="btn-secondary rounded-full px-8 py-4 flex items-center gap-2" onClick={restartQuiz}>
+            <div className="mt-16 flex flex-col items-center gap-6">
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <Button variant="outline" className="rounded-full px-5" onClick={shareResult}>
+                  <Share2 className="size-4" />
+                  {siteCopy.result.shareLabel}
+                </Button>
+                <Button className="cta-primary rounded-full px-5" onClick={handleGeneratePoster}>
+                  <Download className="size-4" />
+                  {siteCopy.result.downloadLabel}
+                </Button>
+              </div>
+              <button className="btn-secondary rounded-full px-8 py-4 flex items-center gap-1" onClick={restartQuiz}>
                 <RotateCcw className="size-4" />
                 {siteCopy.result.retakeLabel}
               </button>
@@ -521,7 +597,7 @@ export default function Home() {
               开始测试
             </button>
           </nav>
-          <Button className="cta-primary rounded-full px-6 py-5 text-sm font-semibold" onClick={startQuiz}>
+          <Button className="cta-primary rounded-full py-5 text-sm font-semibold !px-6" onClick={startQuiz}>
             {siteCopy.hero.primaryCta}
           </Button>
         </div>
@@ -531,26 +607,29 @@ export default function Home() {
         <section className="container pt-14 md:pt-18 pb-10">
           <div className="mx-auto max-w-4xl text-center">
             <p className="section-eyebrow justify-center">{siteCopy.hero.eyebrow}</p>
-            <h1 className="hero-title mt-5">{siteCopy.hero.title}</h1>
+            <h1 className="hero-title mt-5">
+              在 AI 眼里，<br className="sm:hidden" />
+              你是哪种人类
+            </h1>
             <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-500 md:text-lg">
               {siteCopy.hero.description}
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-              <Button className="cta-primary rounded-full px-8 py-6 text-base font-semibold" onClick={startQuiz}>
+              <Button className="cta-primary rounded-full py-6 text-base font-semibold !px-6" onClick={startQuiz}>
                 {siteCopy.hero.primaryCta}
-                <ArrowRight className="ml-2 size-4" />
+                <ArrowRight className="size-4" />
               </Button>
               <button onClick={goToGallery} className="cta-secondary">
                 {siteCopy.hero.secondaryCta}
               </button>
             </div>
-            <div className="mt-10 grid gap-3 sm:grid-cols-3">
+            <div className="mt-10 grid gap-3 grid-cols-3">
               {siteCopy.hero.stats.map((stat) => (
-                <div key={stat.label} className="panel px-6 py-5 text-left sm:text-center">
-                  <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-400">
+                <div key={stat.label} className="panel px-3 py-5 text-center sm:px-6">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 sm:text-xs">
                     {stat.label}
                   </p>
-                  <p className="mt-2 text-2xl font-bold text-slate-800">{stat.value}</p>
+                  <p className="mt-1 text-base font-bold text-slate-800">{stat.value}</p>
                 </div>
               ))}
             </div>
@@ -571,59 +650,57 @@ const ResultCard = forwardRef<HTMLDivElement, { result: any; hideStats?: boolean
     return (
       <div 
         ref={ref}
-        className="flex flex-col bg-white panel overflow-hidden p-0" 
-        style={{ width: forExport ? 400 : '100%' }}
+        className="flex flex-col bg-white panel overflow-hidden p-0 w-full max-w-[400px] mx-auto" 
       >
         <div 
-          className="relative px-8 py-10 text-center pb-8"
+          className="relative px-6 py-8 text-center"
           style={{ background: result.personality.palette.soft }}
         >
           <div className="relative z-10 w-full text-center">
-             {forExport && <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500/50 mb-3">SBAI PERSONALITY TEST</p>}
-            <p className="font-display text-lg font-bold text-slate-400/80 tracking-widest">{result.personality.type}</p>
-            <h1 className="mt-1 font-display text-[2.5rem] leading-none font-black text-slate-800 tracking-tight">{result.personality.nameZh}</h1>
-            <div className="mt-6 inline-block rounded-2xl border border-slate-400/10 bg-white/40 px-5 py-2 backdrop-blur-md">
-               <p className="text-sm font-bold italic text-slate-600 leading-relaxed">
+             {forExport && <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500/40 mb-2">SBAI PERSONALITY TEST</p>}
+            <p className="font-display text-sm font-bold text-slate-400/80 tracking-widest">{result.personality.type}</p>
+            <h1 className="mt-1 font-display text-[2rem] leading-none font-black text-slate-800 tracking-tight">{result.personality.nameZh}</h1>
+            <div className="mt-4 inline-block rounded-xl border border-slate-400/10 bg-white/40 px-4 py-1.5 backdrop-blur-md">
+               <p className="text-xs font-bold italic text-slate-600 leading-relaxed">
                 “{result.personality.tagline}”
               </p>
             </div>
           </div>
           
-          <div className="relative z-10 mt-6 w-full">
-             <PersonaAvatar type={result.personality.type} radius="12px" className="w-full h-auto shadow-md" />
+          <div className="relative z-10 mt-4 mx-auto w-3/4">
+             <PersonaAvatar type={result.personality.type} radius="12px" className="w-full h-auto shadow-sm" />
           </div>
 
-          <div className="relative z-10 mt-6 rounded-3xl bg-white/60 p-5 border border-white/40 backdrop-blur-sm text-left shadow-sm">
-            <p className="text-sm leading-relaxed text-slate-700">
+          <div className="relative z-10 mt-4 rounded-2xl bg-white/60 p-4 border border-white/40 backdrop-blur-sm text-left shadow-xs">
+            <p className="text-xs leading-normal text-slate-700">
               {result.personality.description}
             </p>
           </div>
         </div>
 
         {(!hideStats || forExport) && (
-          <div className="bg-white p-8 pb-10">
-            <div className="grid grid-cols-2 gap-x-6 gap-y-6">
+          <div className="bg-white p-6 pb-6">
+            <div className="grid grid-cols-4 gap-2">
               {poles.map((pole) => (
-                <div key={pole.axisId} className="flex flex-col items-center text-center p-3 rounded-2xl bg-slate-50 border border-slate-100">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">{pole.label}</p>
-                  <p className="text-sm font-black text-slate-800">{pole.winnerLabel}</p>
+                <div key={pole.axisId} className="flex items-center justify-center p-2 rounded-xl bg-slate-50 border border-slate-100">
+                  <p className="text-[10px] font-black text-slate-800 tracking-tight">{pole.winnerLabel}</p>
                 </div>
               ))}
             </div>
 
             {forExport && (
-              <div className="mt-8 flex items-center justify-between pt-6 border-t border-slate-100">
+              <div className="mt-4 flex items-center justify-between pt-4 border-t border-slate-100">
                 <div className="flex items-center gap-3">
-                  <div className="size-8 rounded-lg bg-slate-100 p-1.5 opacity-60">
+                  <div className="opacity-60 scale-90 origin-left">
                     <BrandMark minimal />
                   </div>
                   <div className="text-left">
-                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-300">SCAN TO TEST</p>
-                    <p className="text-[10px] font-bold text-slate-400 mt-0.5">SBAI Personality</p>
+                    <p className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-300">SCAN TO TEST</p>
+                    <p className="text-[9px] font-bold text-slate-400 mt-0.5">SBAI Personality</p>
                   </div>
                 </div>
-                <div className="size-16 rounded-lg bg-white p-2 shadow-sm flex items-center justify-center">
-                  <QRCodeSVG value={window.location.href} size={48} level="L" />
+                <div className="bg-white p-1 flex items-center justify-center border border-slate-50">
+                  <QRCodeSVG value={window.location.href} size={44} level="L" />
                 </div>
               </div>
             )}
@@ -649,7 +726,7 @@ function GalleryView({
         <div className="container flex items-center justify-between py-4">
           <BrandMark onClick={onBack} />
           <Button variant="outline" className="rounded-full" onClick={onBack}>
-            <ChevronLeft className="mr-2 size-4" />
+            <ChevronLeft className="size-4" />
             返回首页
           </Button>
         </div>
