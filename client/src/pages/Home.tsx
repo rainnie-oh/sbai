@@ -94,17 +94,12 @@ export default function Home() {
 
   const progressPercent = (currentIndex / questions.length) * 100;
 
+  // Navigation handles view changes, scrolling is left to user preference or fixed layout
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    
-    // On mobile, if we are in quiz view and just changed questions, 
-    // scroll to ensure the question card is visible
-    if (view === "quiz" && window.innerWidth < 768 && quizTopRef.current) {
-      setTimeout(() => {
-        quizTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 100);
-    }
-  }, [view, currentIndex]);
+    // Only scroll to top when changing major views (e.g., landing -> quiz)
+    // but not every question change
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [view]);
 
   useEffect(() => {
     if (view === "loading") {
@@ -207,8 +202,8 @@ export default function Home() {
     setTimeout(async () => {
       if (resultCardRef.current) {
         try {
-          // Small buffer for QR code / avatar to settle
-          await new Promise(r => setTimeout(r, 600));
+          // Increased buffer for QR code / avatar to settle and decode
+          await new Promise(r => setTimeout(r, 1200));
           const dataUrl = await toPng(resultCardRef.current, { 
             cacheBust: true,
             pixelRatio: 2,
@@ -713,10 +708,11 @@ const ResultCard = forwardRef<HTMLDivElement, { result: any; hideStats?: boolean
             type={result.personality.type} 
             radius="12px" 
             background="white"
-            className="relative z-10 mx-auto mt-4 w-full aspect-square shadow-sm transition-transform duration-700 group-hover:scale-105" 
+            forExport={forExport}
+            className={`relative z-10 mx-auto mt-4 w-full aspect-square transition-transform duration-700 group-hover:scale-105 ${forExport ? "" : "shadow-sm"}`} 
           />
 
-          <div className="relative z-10 mt-4 rounded-2xl bg-white/60 p-4 border border-white/40 backdrop-blur-sm text-left shadow-xs">
+          <div className={`relative z-10 mt-4 rounded-2xl bg-white/60 p-4 border border-white/40 backdrop-blur-sm text-left ${forExport ? "" : "shadow-xs"}`}>
             <p className="text-xs leading-normal text-slate-700">
               {result.personality.description}
             </p>
