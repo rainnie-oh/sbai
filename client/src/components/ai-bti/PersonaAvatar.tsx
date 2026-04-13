@@ -22,7 +22,7 @@ export function PersonaAvatar({
       className={`relative flex items-center justify-center overflow-hidden ${className || ""}`}
       style={{ 
         width: typeof size === "number" ? `${size}px` : size, 
-        aspectRatio: "1 / 1.15", 
+        aspectRatio: className?.includes("aspect-") ? undefined : "1 / 1.15", 
         backgroundColor: background,
         borderRadius: radius
       }}

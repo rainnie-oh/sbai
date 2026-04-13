@@ -493,11 +493,6 @@ export default function Home() {
         <header className="sticky top-0 z-40 border-b border-border/70 bg-background/92 backdrop-blur-xl">
           <div className="container flex items-center justify-between py-4">
             <BrandMark onClick={goToLanding} />
-            <nav className="hidden items-center gap-8 lg:flex">
-              <button className="nav-link font-bold text-slate-800" onClick={goToGallery}>
-                16 人格
-              </button>
-            </nav>
             <div className="flex items-center gap-3">
               <Button variant="outline" className="rounded-full" onClick={goToLanding}>
                 返回首页
@@ -625,11 +620,6 @@ export default function Home() {
       <header className="sticky top-0 z-40 border-b border-border/70 bg-background/92 backdrop-blur-xl">
         <div className="container flex items-center justify-between py-4">
           <BrandMark onClick={goToLanding} />
-          <nav className="hidden items-center gap-8 lg:flex">
-            <button className="nav-link font-bold text-slate-800" onClick={goToGallery}>
-              16 人格
-            </button>
-          </nav>
           <Button className="cta-primary rounded-full py-5 text-sm font-semibold !px-6" onClick={startQuiz}>
             {siteCopy.hero.primaryCta}
           </Button>
@@ -645,7 +635,7 @@ export default function Home() {
               你是哪种人类
             </h1>
             <p className="mt-2 text-sm md:text-base font-bold text-slate-400">
-              16种人格｜看看AI是你的狗，还是你是AI的狗。
+              16种人格｜是你在调教AI，还是AI在调教你？
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
               <Button className="cta-primary rounded-full py-6 text-base font-semibold !px-8 shadow-xl" onClick={startQuiz}>
@@ -700,7 +690,8 @@ const ResultCard = forwardRef<HTMLDivElement, { result: any; hideStats?: boolean
     return (
       <div 
         ref={ref}
-        className="flex flex-col bg-white panel overflow-hidden p-0 w-full max-w-[400px] mx-auto" 
+        className={`flex flex-col bg-white panel overflow-hidden p-0 mx-auto ${forExport ? "w-[400px]" : "w-full max-w-[400px]"}`}
+        style={{ borderRadius: '32px' }}
       >
         <div 
           className="relative px-6 py-8 text-center"
@@ -717,9 +708,12 @@ const ResultCard = forwardRef<HTMLDivElement, { result: any; hideStats?: boolean
             </div>
           </div>
           
-          <div className="relative z-10 mx-auto w-full aspect-square overflow-hidden rounded-[12px]">
-             <PersonaAvatar type={result.personality.type} radius="0px" className="w-full h-full object-cover shadow-sm transition-transform duration-700 group-hover:scale-105" />
-          </div>
+          <PersonaAvatar 
+            type={result.personality.type} 
+            radius="12px" 
+            background="white"
+            className="relative z-10 mx-auto mt-4 w-full aspect-square shadow-sm transition-transform duration-700 group-hover:scale-105" 
+          />
 
           <div className="relative z-10 mt-4 rounded-2xl bg-white/60 p-4 border border-white/40 backdrop-blur-sm text-left shadow-xs">
             <p className="text-xs leading-normal text-slate-700">
@@ -846,11 +840,6 @@ function TypeDetailView({
       <header className="sticky top-0 z-40 border-b border-border/70 bg-background/92 backdrop-blur-xl">
         <div className="container flex items-center justify-between py-4">
           <BrandMark onClick={onGoHome} />
-          <nav className="hidden items-center gap-8 lg:flex">
-            <button className="nav-link font-bold text-slate-800" onClick={onBack}>
-              16 人格
-            </button>
-          </nav>
           <div className="flex items-center gap-3">
             <Button variant="outline" className="rounded-full" onClick={onBack}>
               返回列表
@@ -881,9 +870,12 @@ function TypeDetailView({
                     </div>
                   </div>
                   
-                  <div className="relative z-10 mx-auto mt-6 w-full aspect-square overflow-hidden rounded-[12px]">
-                     <PersonaAvatar type={type.type} radius="0px" className="w-full h-full object-cover shadow-md" />
-                  </div>
+                  <PersonaAvatar 
+                    type={type.type} 
+                    radius="12px" 
+                    background="white"
+                    className="relative z-10 mx-auto mt-6 w-full aspect-square shadow-md" 
+                  />
 
                   <div className="relative z-10 mt-6 rounded-3xl bg-white/60 p-5 border border-white/40 backdrop-blur-sm shadow-sm text-left">
                     <p className="text-sm leading-relaxed text-slate-700">
