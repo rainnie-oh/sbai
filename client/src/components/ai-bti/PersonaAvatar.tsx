@@ -30,7 +30,7 @@ export function PersonaAvatar({
       <img
         src={imagePath}
         alt={`${type} personality illustration`}
-        className="h-full w-full object-contain"
+        className="h-full w-full object-cover"
         onError={(e) => {
           (e.target as HTMLImageElement).src = "/illustrations/POOR.png";
         }}

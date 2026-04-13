@@ -335,12 +335,13 @@ export default function Home() {
                       上一题
                     </Button>
 
-                    {isAllAnswered || currentIndex === questions.length - 1 ? (
+                    {currentIndex === questions.length - 1 ? (
                       <Button
                         onClick={submitQuiz}
-                        className="cta-primary min-w-[160px] rounded-full px-6 py-6 text-sm font-semibold shadow-lg"
+                        disabled={!isAllAnswered || isTransitioning}
+                        className="cta-primary min-w-[160px] rounded-full px-6 py-6 text-sm font-semibold shadow-lg disabled:opacity-50"
                       >
-                        {isAllAnswered ? "提交结果" : siteCopy.quiz.submitLabel}
+                        提交结果
                       </Button>
                     ) : (
                       <Button
@@ -798,7 +799,7 @@ function GalleryView({
                   className="relative aspect-square w-full flex items-center justify-center p-0 transition-colors group-hover:opacity-90 grayscale-[0.2] group-hover:grayscale-0"
                   style={{ backgroundColor: item.palette.soft }}
                 >
-                  <PersonaAvatar type={item.type} radius="0px" className="w-full h-full object-cover" />
+                  <PersonaAvatar type={item.type} radius="0px" className="w-full h-full aspect-square object-cover" />
                 </div>
                 
                 <div className="p-6 text-center flex-1" style={{ backgroundColor: item.palette.soft }}>
