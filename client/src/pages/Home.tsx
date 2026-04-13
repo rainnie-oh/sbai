@@ -52,6 +52,7 @@ export default function Home() {
   });
 
   const resultCardRef = useRef<HTMLDivElement>(null);
+  const quizTopRef = useRef<HTMLDivElement>(null);
 
   // Sync back to localStorage
   useEffect(() => {
@@ -95,6 +96,14 @@ export default function Home() {
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
+    
+    // On mobile, if we are in quiz view and just changed questions, 
+    // scroll to ensure the question card is visible
+    if (view === "quiz" && window.innerWidth < 768 && quizTopRef.current) {
+      setTimeout(() => {
+        quizTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    }
   }, [view, currentIndex]);
 
   useEffect(() => {
@@ -248,10 +257,10 @@ export default function Home() {
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
               <div>
                 <p className="section-eyebrow">{siteCopy.quiz.progressLabel}</p>
-                <h1 className="font-display text-3xl font-bold text-slate-800 md:text-4xl">
+                <h1 className="font-display text-2xl font-bold text-slate-800 md:text-4xl">
                   {siteCopy.quiz.title}
                 </h1>
-                <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-500 md:text-base">
+                <p className="mt-2 max-w-2xl text-xs leading-6 text-slate-500 md:text-base hidden md:block">
                   {siteCopy.quiz.intro}
                 </p>
               </div>
@@ -268,7 +277,7 @@ export default function Home() {
               />
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+            <div ref={quizTopRef} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
               <AnimatePresence mode="wait">
                 <motion.section
                   key={currentQuestion.id}
