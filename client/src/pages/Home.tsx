@@ -39,7 +39,7 @@ export default function Home() {
   const [showPoster, setShowPoster] = useState(false);
   const [posterUrl, setPosterUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const resultCardRef = useRef<HTMLDivElement>(null);
 
   const answeredCount = useMemo(() => Object.keys(responses).length, [responses]);
@@ -107,7 +107,7 @@ export default function Home() {
   };
 
   const handleSelect = (optionId: string) => {
-    if (!currentQuestion) return;
+    if (!currentQuestion || isTransitioning) return;
 
     setResponses((prev) => ({
       ...prev,
@@ -115,8 +115,10 @@ export default function Home() {
     }));
 
     if (currentIndex < questions.length - 1) {
+      setIsTransitioning(true);
       setTimeout(() => {
         setCurrentIndex((prev) => prev + 1);
+        setIsTransitioning(false);
       }, 300);
     }
   };
@@ -255,7 +257,7 @@ export default function Home() {
                     <Sparkles className="mt-1 hidden size-5 text-[#8d77c5] md:block" />
                   </div>
 
-                  <div className="space-y-4">
+                  <div className={`space-y-4 ${isTransitioning ? "pointer-events-none opacity-80" : ""}`}>
                     {currentQuestion.options.map((option, index) => {
                       const active = currentAnswer === option.id;
                       return (
@@ -285,7 +287,7 @@ export default function Home() {
                       variant="outline"
                       className="rounded-full border-slate-300 !px-6 py-6 text-sm font-semibold text-slate-600"
                       onClick={() => setCurrentIndex((prev) => Math.max(prev - 1, 0))}
-                      disabled={currentIndex === 0}
+                      disabled={currentIndex === 0 || isTransitioning}
                     >
                       <ChevronLeft className="size-4" />
                       上一题
@@ -296,12 +298,12 @@ export default function Home() {
                         onClick={submitQuiz}
                         className="cta-primary min-w-[160px] rounded-full px-6 py-6 text-sm font-semibold shadow-lg"
                       >
-                        {isAllAnswered ? "立即提交结果" : siteCopy.quiz.submitLabel}
+                        {isAllAnswered ? "提交结果" : siteCopy.quiz.submitLabel}
                       </Button>
                     ) : (
                       <Button
                         onClick={() => setCurrentIndex((prev) => Math.min(prev + 1, questions.length - 1))}
-                        disabled={!currentAnswer}
+                        disabled={!currentAnswer || isTransitioning}
                         className="cta-primary min-w-[140px] rounded-full px-6 py-6 text-sm font-semibold"
                       >
                         {siteCopy.quiz.nextLabel}
@@ -360,7 +362,7 @@ export default function Home() {
         </header>
 
         <main className="container flex min-h-[calc(100vh-81px)] items-center justify-center py-10">
-          <div className="panel mx-auto max-w-3xl px-8 py-14 text-center md:px-14 md:py-18">
+          <div className="panel mx-auto w-full max-w-4xl px-6 py-14 text-center md:px-14 md:py-18">
             <div className="loading-rings mx-auto mb-10">
               <span />
               <span />
@@ -589,14 +591,6 @@ export default function Home() {
       <header className="sticky top-0 z-40 border-b border-border/70 bg-background/92 backdrop-blur-xl">
         <div className="container flex items-center justify-between py-4">
           <BrandMark onClick={goToLanding} />
-          <nav className="hidden items-center gap-8 lg:flex">
-            <button className="nav-link" onClick={goToGallery}>
-              16 人格
-            </button>
-            <button className="nav-link" onClick={startQuiz}>
-              开始测试
-            </button>
-          </nav>
           <Button className="cta-primary rounded-full py-5 text-sm font-semibold !px-6" onClick={startQuiz}>
             {siteCopy.hero.primaryCta}
           </Button>
@@ -726,7 +720,6 @@ function GalleryView({
         <div className="container flex items-center justify-between py-4">
           <BrandMark onClick={onBack} />
           <Button variant="outline" className="rounded-full" onClick={onBack}>
-            <ChevronLeft className="size-4" />
             返回首页
           </Button>
         </div>
