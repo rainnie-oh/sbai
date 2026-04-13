@@ -46,6 +46,7 @@ export default function Home() {
   const [posterUrl, setPosterUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [illustrationDataUrl, setIllustrationDataUrl] = useState<string | null>(null);
   const [testCount, setTestCount] = useState(() => {
     // Persistent local count starting from 89
     const saved = typeof window !== 'undefined' ? localStorage.getItem('sbai_test_count') : null;
@@ -194,30 +195,51 @@ export default function Home() {
   };
 
   const handleGeneratePoster = async () => {
+    if (!result) return;
+
     setShowPoster(true);
     setPosterUrl(null);
     setIsGenerating(true);
-    
-    // Allow animation/mount to complete
-    setTimeout(async () => {
-      if (resultCardRef.current) {
-        try {
-          // Significantly increased buffer for mobile Safari/WeChat environments
-          await new Promise(r => setTimeout(r, 2000));
-          const dataUrl = await toPng(resultCardRef.current, { 
-            cacheBust: true,
-            pixelRatio: 2,
-            backgroundColor: '#ffffff'
-          });
-          setPosterUrl(dataUrl);
-        } catch (err) {
-          console.error("Poster generation failed", err);
-          toast.error("生成失败，请尝试手动截屏。");
-        } finally {
-          setIsGenerating(false);
+    setIllustrationDataUrl(null);
+
+    try {
+      // THE ROOT-CAUSE FIX: 
+      // Manually fetch the image and convert to dataURL BEFORE capturing
+      // This bypasses Safari's security-related failures during DOM cloning
+      const imgPath = `${window.location.origin}/illustrations/${result.personality.type}.png`;
+      const response = await fetch(imgPath);
+      const blob = await response.blob();
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      setIllustrationDataUrl(dataUrl);
+      
+      // Short delay for React to render the base64 source into the hidden card
+      setTimeout(async () => {
+        if (resultCardRef.current) {
+          try {
+            const finalPosterUrl = await toPng(resultCardRef.current, { 
+              cacheBust: true,
+              pixelRatio: 2,
+              backgroundColor: '#ffffff'
+            });
+            setPosterUrl(finalPosterUrl);
+          } catch (err) {
+            console.error("Poster generation failed", err);
+            toast.error("生成失败，请重试。");
+          } finally {
+            setIsGenerating(false);
+          }
         }
-      }
-    }, 500);
+      }, 800);
+    } catch (err) {
+      console.error("Image pre-load failed", err);
+      toast.error("卡片初始化失败，请重试。");
+      setIsGenerating(false);
+    }
   };
 
   if (view === "gallery") {
@@ -470,7 +492,13 @@ export default function Home() {
                     />
                   ) : (
                     <div className={isGenerating ? "opacity-30 scale-95 transition-all duration-500" : "opacity-100"}>
-                      <ResultCard ref={resultCardRef} result={result} hideStats forExport />
+                      <ResultCard 
+                        ref={resultCardRef} 
+                        result={result} 
+                        hideStats 
+                        forExport 
+                        overrideSrc={illustrationDataUrl || undefined}
+                      />
                     </div>
                   )}
                 </div>
@@ -697,8 +725,8 @@ export default function Home() {
 /**
  * COMPACT RESULTS CARD COMPONENT
  */
-const ResultCard = forwardRef<HTMLDivElement, { result: any; hideStats?: boolean; forExport?: boolean }>(
-  ({ result, hideStats, forExport }, ref) => {
+const ResultCard = forwardRef<HTMLDivElement, { result: any; hideStats?: boolean; forExport?: boolean; overrideSrc?: string }>(
+  ({ result, hideStats, forExport, overrideSrc }, ref) => {
     const poles = getPersonalityPoles(result.code);
     
     return (
@@ -727,6 +755,7 @@ const ResultCard = forwardRef<HTMLDivElement, { result: any; hideStats?: boolean
             radius="12px" 
             background="white"
             forExport={forExport}
+            overrideSrc={overrideSrc}
             className={`relative z-10 mx-auto mt-4 w-full aspect-square transition-transform duration-700 group-hover:scale-105 ${forExport ? "" : "shadow-sm"}`} 
           />
 

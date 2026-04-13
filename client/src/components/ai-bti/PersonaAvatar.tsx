@@ -7,6 +7,7 @@ type PersonaAvatarProps = {
   className?: string;
   radius?: string;
   forExport?: boolean;
+  overrideSrc?: string;
 };
 
 export function PersonaAvatar({
@@ -16,8 +17,9 @@ export function PersonaAvatar({
   className,
   radius = "12px",
   forExport,
+  overrideSrc,
 }: PersonaAvatarProps) {
-  const imagePath = typeof window !== 'undefined' ? `${window.location.origin}/illustrations/${type}.png` : `/illustrations/${type}.png`;
+  const imagePath = overrideSrc || (typeof window !== 'undefined' ? `${window.location.origin}/illustrations/${type}.png` : `/illustrations/${type}.png`);
 
   return (
     <div 
