@@ -6,6 +6,7 @@ type PersonaAvatarProps = {
   background?: string;
   className?: string;
   radius?: string;
+  forExport?: boolean;
 };
 
 export function PersonaAvatar({
@@ -14,8 +15,9 @@ export function PersonaAvatar({
   background = "transparent",
   className,
   radius = "12px",
+  forExport,
 }: PersonaAvatarProps) {
-  const imagePath = `/illustrations/${type}.png`;
+  const imagePath = typeof window !== 'undefined' ? `${window.location.origin}/illustrations/${type}.png` : `/illustrations/${type}.png`;
 
   return (
     <div 
@@ -37,11 +39,12 @@ export function PersonaAvatar({
         style={{ display: "block" }}
       />
       
-      {/* Shadow */}
-      <div 
-        className="absolute bottom-2 left-1/2 h-4 w-3/4 -translate-x-1/2 rounded-full bg-black/5 blur-md"
-        style={{ zIndex: -1 }}
-      />
+      {!forExport && (
+        <div 
+          className="absolute bottom-2 left-1/2 h-4 w-3/4 -translate-x-1/2 rounded-full bg-black/5 blur-md"
+          style={{ zIndex: -1 }}
+        />
+      )}
     </div>
   );
 }
