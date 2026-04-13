@@ -22,7 +22,7 @@ export function PersonaAvatar({
       className={`relative flex items-center justify-center overflow-hidden ${className || ""}`}
       style={{ 
         width: typeof size === "number" ? `${size}px` : size, 
-        aspectRatio: "1 / 1.15", 
+        aspectRatio: className?.includes("aspect-") ? undefined : "1 / 1.15", 
         backgroundColor: background,
         borderRadius: radius
       }}
@@ -30,7 +30,7 @@ export function PersonaAvatar({
       <img
         src={imagePath}
         alt={`${type} personality illustration`}
-        className="h-full w-full object-contain"
+        className="h-full w-full object-cover"
         onError={(e) => {
           (e.target as HTMLImageElement).src = "/illustrations/POOR.png";
         }}

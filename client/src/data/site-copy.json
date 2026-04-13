@@ -92,7 +92,7 @@
     "intro": "你和AI到底什么关系",
     "nextLabel": "下一题",
     "restartLabel": "重新来过",
-    "submitLabel": "查看结果",
+    "submitLabel": "提交结果",
     "progressLabel": "测试进度"
   },
   "loading": {
