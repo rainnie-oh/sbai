@@ -9,7 +9,12 @@ import {
   Share2,
   Sparkles,
   CheckCircle2,
-  X
+  X,
+  Bot,
+  Brain,
+  Cpu,
+  MessageSquare,
+  Sparkle
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
@@ -40,7 +45,35 @@ export default function Home() {
   const [posterUrl, setPosterUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [testCount, setTestCount] = useState(() => {
+    // Persistent local count starting from 89
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('sbai_test_count') : null;
+    return saved ? parseInt(saved) : 89;
+  });
+
   const resultCardRef = useRef<HTMLDivElement>(null);
+
+  // Sync back to localStorage
+  useEffect(() => {
+    localStorage.setItem('sbai_test_count', testCount.toString());
+  }, [testCount]);
+
+  // Simulate a live counter 
+  useEffect(() => {
+    if (view === "landing") {
+      const interval = setInterval(() => {
+        setTestCount(prev => prev + (Math.random() > 0.7 ? 1 : 0));
+      }, 8000);
+      return () => clearInterval(interval);
+    }
+  }, [view]);
+
+  // Increment on submission
+  useEffect(() => {
+    if (view === "loading") {
+      setTestCount(prev => prev + 1);
+    }
+  }, [view]);
 
   const answeredCount = useMemo(() => Object.keys(responses).length, [responses]);
   const isAllAnswered = answeredCount === questions.length;
@@ -451,6 +484,11 @@ export default function Home() {
         <header className="sticky top-0 z-40 border-b border-border/70 bg-background/92 backdrop-blur-xl">
           <div className="container flex items-center justify-between py-4">
             <BrandMark onClick={goToLanding} />
+            <nav className="hidden items-center gap-8 lg:flex">
+              <button className="nav-link font-bold text-slate-800" onClick={goToGallery}>
+                16 人格
+              </button>
+            </nav>
             <div className="flex items-center gap-3">
               <Button variant="outline" className="rounded-full" onClick={goToLanding}>
                 返回首页
@@ -466,11 +504,9 @@ export default function Home() {
           <div className="mx-auto max-w-6xl">
             <div className="grid gap-x-12 gap-y-8 xl:grid-cols-[440px_1fr]">
               <div className="xl:col-start-1 xl:row-start-1 space-y-8">
-                <ResultCard result={result} hideStats />
-                
-                {/* Mobile-only Sharing Buttons */}
-                <div className="flex flex-wrap items-center justify-center gap-3 xl:hidden">
-                  <Button variant="outline" className="rounded-full px-5" onClick={shareResult}>
+                {/* Sharing Buttons moved to top */}
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <Button variant="outline" className="rounded-full px-5 border-slate-200" onClick={shareResult}>
                     <Share2 className="size-4" />
                     {siteCopy.result.shareLabel}
                   </Button>
@@ -479,6 +515,8 @@ export default function Home() {
                     {siteCopy.result.downloadLabel}
                   </Button>
                 </div>
+
+                <ResultCard result={result} hideStats />
               </div>
 
               <div className="xl:col-start-2 xl:row-span-2 space-y-8">
@@ -500,17 +538,15 @@ export default function Home() {
                               {axis.rightLabel}
                             </span>
                           </div>
-                          <AxisMeter axis={axis} />
+                          <AxisMeter axis={axis} showPercentages />
                           <div className="mt-4 text-left">
                             {axis.leftPercent >= axis.rightPercent ? (
                               <p className="text-sm leading-relaxed text-slate-500">
-                                <span className="font-bold text-slate-700">【{axis.leftLabel}】</span>
-                                {axis.leftDescription}
+                                {axis.leftDescription.includes('】') ? axis.leftDescription.split('】')[1] : axis.leftDescription}
                               </p>
                             ) : (
                               <p className="text-sm leading-relaxed text-slate-500">
-                                <span className="font-bold text-slate-700">【{axis.rightLabel}】</span>
-                                {axis.rightDescription}
+                                {axis.rightDescription.includes('】') ? axis.rightDescription.split('】')[1] : axis.rightDescription}
                               </p>
                             )}
                           </div>
@@ -521,10 +557,13 @@ export default function Home() {
                 </section>
 
                 <section className="panel p-8">
-                  <p className="section-eyebrow mb-5">本命 AI</p>
-                  <h3 className="font-display text-2xl font-extrabold text-slate-800">
-                    {result.personality.innateAIName}
-                  </h3>
+                    <p className="section-eyebrow mb-5">本命 AI</p>
+                    <div className="flex items-center gap-3 mb-2">
+                      <AILogo name={result.personality.innateAIName} size={24} />
+                      <h3 className="font-display text-2xl font-extrabold text-slate-800">
+                        {result.personality.innateAIName}
+                      </h3>
+                    </div>
                   <div className="mt-6 rounded-3xl bg-slate-50 p-6 border border-slate-100">
                     <p className="text-base leading-relaxed text-slate-600">
                       {result.personality.innateAIDescription}
@@ -564,24 +603,10 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="mt-16 flex flex-col items-center gap-6">
-              <div className="flex flex-wrap items-center justify-center gap-3">
-                <Button variant="outline" className="rounded-full px-5" onClick={shareResult}>
-                  <Share2 className="size-4" />
-                  {siteCopy.result.shareLabel}
-                </Button>
-                <Button className="cta-primary rounded-full px-5" onClick={handleGeneratePoster}>
-                  <Download className="size-4" />
-                  {siteCopy.result.downloadLabel}
-                </Button>
-              </div>
-              <button className="btn-secondary rounded-full px-8 py-4 flex items-center gap-1" onClick={restartQuiz}>
-                <RotateCcw className="size-4" />
-                {siteCopy.result.retakeLabel}
-              </button>
-            </div>
+            <div className="mt-16 text-center" />
           </div>
         </main>
+        <Footer />
       </div>
     );
   }
@@ -591,6 +616,11 @@ export default function Home() {
       <header className="sticky top-0 z-40 border-b border-border/70 bg-background/92 backdrop-blur-xl">
         <div className="container flex items-center justify-between py-4">
           <BrandMark onClick={goToLanding} />
+          <nav className="hidden items-center gap-8 lg:flex">
+            <button className="nav-link font-bold text-slate-800" onClick={goToGallery}>
+              16 人格
+            </button>
+          </nav>
           <Button className="cta-primary rounded-full py-5 text-sm font-semibold !px-6" onClick={startQuiz}>
             {siteCopy.hero.primaryCta}
           </Button>
@@ -605,19 +635,20 @@ export default function Home() {
               在 AI 眼里，<br className="sm:hidden" />
               你是哪种人类
             </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-500 md:text-lg">
-              {siteCopy.hero.description}
+            <p className="mt-2 text-sm md:text-base font-bold text-slate-400">
+              16种人格｜看看AI是你的狗，还是你是AI的狗。
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-              <Button className="cta-primary rounded-full py-6 text-base font-semibold !px-6" onClick={startQuiz}>
+              <Button className="cta-primary rounded-full py-6 text-base font-semibold !px-8 shadow-xl" onClick={startQuiz}>
                 {siteCopy.hero.primaryCta}
-                <ArrowRight className="size-4" />
+                <ArrowRight className="ml-2 size-5" />
               </Button>
-              <button onClick={goToGallery} className="cta-secondary">
+              <button onClick={goToGallery} className="cta-secondary !px-8">
                 {siteCopy.hero.secondaryCta}
               </button>
             </div>
-            <div className="mt-10 grid gap-3 grid-cols-3">
+            
+            <div className="mt-10 grid gap-3 grid-cols-3 mb-10">
               {siteCopy.hero.stats.map((stat) => (
                 <div key={stat.label} className="panel px-3 py-5 text-center sm:px-6">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 sm:text-xs">
@@ -627,9 +658,25 @@ export default function Home() {
                 </div>
               ))}
             </div>
+
+            <div className="mt-6 flex flex-col items-center gap-2 mb-8">
+              <div className="flex items-center gap-2 bg-[#fdfaf5] border border-[#f0ebdf] px-4 py-2 rounded-full shadow-sm">
+                 <div className="flex -space-x-2">
+                  {[1,2,3,4].map(i => (
+                    <div key={i} className="size-6 rounded-full border-2 border-white bg-slate-200 overflow-hidden">
+                      <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i + 12}`} alt="avatar" />
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs font-bold text-slate-500 leading-none">
+                  已有 <span className="text-slate-800 tabular-nums font-black">{testCount}</span> 人发现了自己的隐藏身份
+                </p>
+              </div>
+            </div>
           </div>
         </section>
       </main>
+      <Footer />
     </div>
   );
 }
@@ -661,8 +708,8 @@ const ResultCard = forwardRef<HTMLDivElement, { result: any; hideStats?: boolean
             </div>
           </div>
           
-          <div className="relative z-10 mt-4 mx-auto w-3/4">
-             <PersonaAvatar type={result.personality.type} radius="12px" className="w-full h-auto shadow-sm" />
+          <div className="relative z-10 mx-auto w-full aspect-square overflow-hidden rounded-[12px]">
+             <PersonaAvatar type={result.personality.type} radius="0px" className="w-full h-full object-cover shadow-sm transition-transform duration-700 group-hover:scale-105" />
           </div>
 
           <div className="relative z-10 mt-4 rounded-2xl bg-white/60 p-4 border border-white/40 backdrop-blur-sm text-left shadow-xs">
@@ -741,24 +788,24 @@ function GalleryView({
             {personalities.map((item) => (
               <div 
                 key={item.type} 
-                className="group relative overflow-hidden rounded-[32px] bg-white p-0 shadow-sm border border-slate-100 cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1"
+                className="group relative overflow-hidden rounded-[32px] bg-white p-0 shadow-sm border border-slate-100 cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1 flex flex-col h-full"
                 onClick={() => onViewDetail(item)}
               >
                 <div 
-                  className="relative h-64 w-full flex items-center justify-center p-8 transition-colors group-hover:bg-slate-50/50"
+                  className="relative aspect-square w-full flex items-center justify-center p-0 transition-colors group-hover:opacity-90 grayscale-[0.2] group-hover:grayscale-0"
                   style={{ backgroundColor: item.palette.soft }}
                 >
-                  <PersonaAvatar type={item.type} radius="12px" />
+                  <PersonaAvatar type={item.type} radius="0px" className="w-full h-full object-cover" />
                 </div>
                 
-                <div className="p-6 text-center">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                <div className="p-6 text-center flex-1" style={{ backgroundColor: item.palette.soft }}>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500/70">
                     {item.type}
                   </span>
-                  <h3 className="mt-2 text-2xl font-black text-slate-800 leading-tight">
+                  <h3 className="mt-1 text-2xl font-black text-slate-800 leading-tight">
                     {item.nameZh}
                   </h3>
-                  <p className="mt-4 text-sm leading-relaxed text-slate-500 italic">
+                  <p className="mt-4 text-[13px] leading-relaxed text-slate-600/90 font-medium italic">
                     “{item.tagline}”
                   </p>
                 </div>
@@ -767,6 +814,7 @@ function GalleryView({
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }
@@ -789,6 +837,11 @@ function TypeDetailView({
       <header className="sticky top-0 z-40 border-b border-border/70 bg-background/92 backdrop-blur-xl">
         <div className="container flex items-center justify-between py-4">
           <BrandMark onClick={onGoHome} />
+          <nav className="hidden items-center gap-8 lg:flex">
+            <button className="nav-link font-bold text-slate-800" onClick={onBack}>
+              16 人格
+            </button>
+          </nav>
           <div className="flex items-center gap-3">
             <Button variant="outline" className="rounded-full" onClick={onBack}>
               返回列表
@@ -819,8 +872,8 @@ function TypeDetailView({
                     </div>
                   </div>
                   
-                  <div className="relative z-10 mt-6 w-full">
-                     <PersonaAvatar type={type.type} radius="12px" className="w-full h-auto shadow-md" />
+                  <div className="relative z-10 mx-auto mt-6 w-full aspect-square overflow-hidden rounded-[12px]">
+                     <PersonaAvatar type={type.type} radius="0px" className="w-full h-full object-cover shadow-md" />
                   </div>
 
                   <div className="relative z-10 mt-6 rounded-3xl bg-white/60 p-5 border border-white/40 backdrop-blur-sm shadow-sm text-left">
@@ -844,7 +897,7 @@ function TypeDetailView({
                       
                       <div className="mt-2">
                         <p className="text-sm leading-relaxed text-slate-500">
-                          {pole.description}
+                           {pole.description.includes('】') ? pole.description.split('】')[1] : pole.description}
                         </p>
                       </div>
                     </div>
@@ -854,9 +907,12 @@ function TypeDetailView({
 
               <aside className="panel p-8">
                 <p className="section-eyebrow mb-5">本命 AI</p>
-                <h3 className="font-display text-2xl font-extrabold text-slate-800">
-                  {type.innateAIName}
-                </h3>
+                <div className="flex items-center gap-3 mb-2">
+                  <AILogo name={type.innateAIName} size={24} />
+                  <h3 className="font-display text-2xl font-extrabold text-slate-800">
+                    {type.innateAIName}
+                  </h3>
+                </div>
                 <div className="mt-6 rounded-3xl bg-slate-50 p-6 border border-slate-100">
                   <p className="text-base leading-relaxed text-slate-600">
                     {type.innateAIDescription}
@@ -867,6 +923,7 @@ function TypeDetailView({
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }
@@ -904,18 +961,77 @@ function BrandMark({ onClick, minimal }: { onClick?: () => void; minimal?: boole
   return <div className="flex items-center gap-3">{content}</div>;
 }
 
-function AxisMeter({ axis }: { axis: AxisResult }) {
+function AxisMeter({ axis, showPercentages }: { axis: AxisResult; showPercentages?: boolean }) {
   return (
-    <div className="relative h-4 w-full overflow-hidden rounded-full bg-[#ece7e1]">
-      <div
-        className="absolute h-full bg-[#4ca8af] transition-all duration-1000"
-        style={{ width: `${axis.leftPercent}%`, left: 0 }}
-      />
-      <div
-        className="absolute h-full bg-[#8d77c5] transition-all duration-1000 opacity-60"
-        style={{ width: `${axis.rightPercent}%`, right: 0 }}
-      />
-      <div className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-white/40" />
+    <div className="flex flex-col gap-2">
+      <div className="relative h-4 w-full overflow-hidden rounded-full bg-[#ece7e1]">
+        <div
+          className="absolute h-full bg-[#4ca8af] transition-all duration-1000"
+          style={{ width: `${axis.leftPercent}%`, left: 0 }}
+        />
+        <div
+          className="absolute h-full bg-[#8d77c5] transition-all duration-1000 opacity-60"
+          style={{ width: `${axis.rightPercent}%`, right: 0 }}
+        />
+        <div className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-white/40" />
+      </div>
+      {showPercentages && (
+        <div className="flex justify-between px-1 text-[10px] font-black text-slate-400 tabular-nums uppercase tracking-tighter">
+          <span>{axis.leftPercent}%</span>
+          <span>{axis.rightPercent}%</span>
+        </div>
+      )}
     </div>
+  );
+}
+
+function AILogo({ name, size = 20 }: { name: string; size?: number }) {
+  const logos: Record<string, string> = {
+    "ChatGPT": "/logos/chatgpt.png",
+    "Claude": "/logos/claude.png",
+    "DeepSeek": "/logos/deepseek.png",
+    "Grok": "/logos/grok.png",
+    "豆包": "/logos/doubao.png",
+    "文心一言": "/logos/wenxin.jpeg",
+    "Gemini": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Gemini_logo.svg/1024px-Gemini_logo.svg.png",
+    "Llama": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Llama3_logo.svg/1024px-Llama3_logo.svg.png",
+    "Kimi": "https://kimi.moonshot.cn/favicon.ico",
+    "通义千问": "https://tongyi.aliyun.com/favicon.ico"
+  };
+
+  const src = logos[name];
+  if (!src) {
+    return <Sparkle className="text-slate-400" size={size} />;
+  }
+
+  return (
+    <div 
+      className="flex items-center justify-center bg-white rounded-lg p-1 shadow-xs ring-1 ring-black/5"
+      style={{ width: size + 8, height: size + 8 }}
+    >
+      <img src={src} alt={name} className="object-contain" style={{ width: size, height: size }} onError={(e) => {
+        // Fallback to Icon if image fails
+        e.currentTarget.style.display = 'none';
+        e.currentTarget.parentElement!.innerHTML = '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot text-slate-400"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>';
+      }} />
+    </div>
+  );
+}
+
+function Footer() {
+  return (
+    <footer className="container py-12 border-t border-border/50">
+      <div className="max-w-4xl mx-auto text-center">
+        <div className="flex items-center justify-center gap-3 mb-6 opacity-30 grayscale saturate-0">
+          <BrandMark minimal />
+        </div>
+        <p className="text-sm text-slate-400 leading-relaxed font-medium">
+           仅供娱乐。灵感来源于官方 MBTI 与 sbti.dev。
+        </p>
+        <p className="mt-8 text-[10px] uppercase tracking-widest text-slate-300 font-bold">
+          &copy; {new Date().getFullYear()} SBAI Project
+        </p>
+      </div>
+    </footer>
   );
 }
