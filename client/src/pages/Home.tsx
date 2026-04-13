@@ -4,6 +4,7 @@ import { toPng } from "html-to-image";
 import {
   ArrowRight,
   ChevronLeft,
+  ChevronRight,
   Download,
   RotateCcw,
   Share2,
@@ -96,10 +97,9 @@ export default function Home() {
 
   // Navigation handles view changes, scrolling is left to user preference or fixed layout
   useEffect(() => {
-    // Only scroll to top when changing major views (e.g., landing -> quiz)
-    // but not every question change
-    window.scrollTo({ top: 0, behavior: "instant" });
-  }, [view]);
+    // Scroll to top when changing major views or navigating between personality types
+    window.scroll(0, 0);
+  }, [view, selectedType]);
 
   useEffect(() => {
     if (view === "loading") {
@@ -202,8 +202,8 @@ export default function Home() {
     setTimeout(async () => {
       if (resultCardRef.current) {
         try {
-          // Increased buffer for QR code / avatar to settle and decode
-          await new Promise(r => setTimeout(r, 1200));
+          // Significantly increased buffer for mobile Safari/WeChat environments
+          await new Promise(r => setTimeout(r, 2000));
           const dataUrl = await toPng(resultCardRef.current, { 
             cacheBust: true,
             pixelRatio: 2,
@@ -231,6 +231,7 @@ export default function Home() {
         onBack={() => setView("gallery")}
         onRestart={startQuiz}
         onGoHome={goToLanding}
+        onTypeChange={setSelectedType}
       />
     );
   }
@@ -276,9 +277,9 @@ export default function Home() {
               <AnimatePresence mode="wait">
                 <motion.section
                   key={currentQuestion.id}
-                  initial={{ opacity: 0, y: 18 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -18 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                   transition={{ duration: 0.28, ease: "easeOut" }}
                   className="panel p-6 md:p-8"
                 >
@@ -600,10 +601,27 @@ export default function Home() {
                     ))}
                   </div>
                 </section>
+
+                <div className="mt-8 flex flex-col items-center justify-center gap-4 border-t border-slate-100 pt-8">
+                  <div className="flex flex-wrap items-center justify-center gap-3">
+                    <Button variant="outline" className="rounded-full px-6 py-5 border-slate-200" onClick={shareResult}>
+                      <Share2 className="size-4" />
+                      {siteCopy.result.shareLabel}
+                    </Button>
+                    <Button className="cta-primary rounded-full px-8 py-5 shadow-lg" onClick={handleGeneratePoster}>
+                      <Download className="size-4" />
+                      {siteCopy.result.downloadLabel}
+                    </Button>
+                  </div>
+                  <Button variant="ghost" className="text-slate-400 text-xs hover:text-slate-600 mt-2" onClick={restartQuiz}>
+                     <RotateCcw className="size-3 mr-1" />
+                     {siteCopy.result.retakeLabel}
+                  </Button>
+                </div>
               </div>
             </div>
 
-            <div className="mt-16 text-center" />
+
           </div>
         </main>
         <Footer />
@@ -686,8 +704,8 @@ const ResultCard = forwardRef<HTMLDivElement, { result: any; hideStats?: boolean
     return (
       <div 
         ref={ref}
-        className={`flex flex-col bg-white panel overflow-hidden p-0 mx-auto ${forExport ? "w-[400px]" : "w-full max-w-[400px]"}`}
-        style={{ borderRadius: '32px' }}
+        className={`flex flex-col bg-white overflow-hidden p-0 mx-auto ${forExport ? "w-[400px] shadow-none border-[#f0f0f0]" : "panel w-full max-w-[400px]"}`}
+        style={{ borderRadius: '32px', boxShadow: forExport ? 'none' : undefined }}
       >
         <div 
           className="relative px-6 py-8 text-center"
@@ -823,14 +841,22 @@ function TypeDetailView({
   type, 
   onBack,
   onRestart,
-  onGoHome
+  onGoHome,
+  onTypeChange
 }: { 
   type: PersonalityType; 
   onBack: () => void;
   onRestart: () => void;
   onGoHome: () => void;
+  onTypeChange: (type: PersonalityType) => void;
 }) {
   const poles = getPersonalityPoles(type.code);
+  const currentIndex = personalities.findIndex(p => p.type === type.type);
+  const prevType = personalities[(currentIndex - 1 + personalities.length) % personalities.length];
+  const nextType = personalities[(currentIndex + 1) % personalities.length];
+
+  const handlePrev = () => onTypeChange(prevType);
+  const handleNext = () => onTypeChange(nextType);
 
   return (
     <div className="min-h-screen bg-[#fcfaf7] text-foreground">
@@ -848,8 +874,37 @@ function TypeDetailView({
         </div>
       </header>
 
-      <main className="container py-8 md:py-12">
+      <main className="container py-2 md:py-12">
         <div className="mx-auto max-w-6xl">
+          {/* Top Navigation */}
+          <div className="flex items-center justify-between mb-2">
+            <Button 
+              variant="ghost" 
+              onClick={handlePrev} 
+              className="group flex items-center gap-2 text-slate-400 hover:text-slate-800 transition-colors"
+            >
+               <ChevronLeft className="size-5 transition-transform group-hover:-translate-x-1" />
+               <div className="flex flex-col items-start leading-tight">
+                 <span className="text-[10px] uppercase tracking-wider opacity-50">PREVIOUS</span>
+                 <span className="text-sm font-bold hidden sm:inline">{prevType.nameZh}</span>
+               </div>
+            </Button>
+            <div className="text-xs font-bold text-slate-300 uppercase tracking-widest">
+              {currentIndex + 1} / {personalities.length}
+            </div>
+            <Button 
+              variant="ghost" 
+              onClick={handleNext} 
+              className="group flex items-center gap-2 text-slate-400 hover:text-slate-800 transition-colors"
+            >
+               <div className="flex flex-col items-end leading-tight">
+                 <span className="text-[10px] uppercase tracking-wider opacity-50">NEXT</span>
+                 <span className="text-sm font-bold hidden sm:inline">{nextType.nameZh}</span>
+               </div>
+               <ChevronRight className="size-5 transition-transform group-hover:translate-x-1" />
+            </Button>
+          </div>
+
           <div className="grid gap-8 xl:grid-cols-[440px_1fr]">
             <section className="w-full">
                <div className="flex flex-col bg-white panel overflow-hidden p-0 relative shadow-sm border border-slate-100">
@@ -918,6 +973,35 @@ function TypeDetailView({
                 </div>
               </aside>
             </div>
+          </div>
+
+          {/* Bottom Navigation */}
+          <div className="flex items-center justify-between mt-8 pt-2 border-t border-slate-200">
+             <Button 
+              variant="ghost" 
+              onClick={handlePrev} 
+              className="group flex items-center gap-2 text-slate-400 hover:text-slate-800 transition-colors"
+            >
+               <ChevronLeft className="size-5 transition-transform group-hover:-translate-x-1" />
+               <div className="flex flex-col items-start leading-tight">
+                 <span className="text-[10px] uppercase tracking-wider opacity-50">PREVIOUS</span>
+                 <span className="text-sm font-bold hidden sm:inline">{prevType.nameZh}</span>
+               </div>
+            </Button>
+            <div className="text-xs font-bold text-slate-300 uppercase tracking-widest">
+              {currentIndex + 1} / {personalities.length}
+            </div>
+            <Button 
+              variant="ghost" 
+              onClick={handleNext} 
+              className="group flex items-center gap-2 text-slate-400 hover:text-slate-800 transition-colors"
+            >
+               <div className="flex flex-col items-end leading-tight">
+                 <span className="text-[10px] uppercase tracking-wider opacity-50">NEXT</span>
+                 <span className="text-sm font-bold hidden sm:inline">{nextType.nameZh}</span>
+               </div>
+               <ChevronRight className="size-5 transition-transform group-hover:translate-x-1" />
+            </Button>
           </div>
         </div>
       </main>
