@@ -105,7 +105,7 @@
   },
   "result": {
     "shareLabel": "分享结果",
-    "downloadLabel": "下载人格卡片",
+    "downloadLabel": "生成卡片",
     "downloadAvatarLabel": "下载人格形象",
     "retakeLabel": "重新测试",
     "axisTitle": "详细打分",
