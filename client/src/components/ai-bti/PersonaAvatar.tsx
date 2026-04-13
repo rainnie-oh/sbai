@@ -37,6 +37,7 @@ export function PersonaAvatar({
           (e.target as HTMLImageElement).src = "/illustrations/POOR.png";
         }}
         style={{ display: "block" }}
+        loading="eager"
       />
       
       {!forExport && (
