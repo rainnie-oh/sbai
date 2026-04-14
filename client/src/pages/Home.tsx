@@ -92,15 +92,16 @@ export default function Home() {
   useEffect(() => {
     // Scroll to top when changing major views or navigating between personality types
     window.scroll(0, 0);
+  }, [view, selectedType]);
 
-    // On mobile, if we are in quiz view and just changed questions, 
-    // scroll to ensure the question card is visible
+  useEffect(() => {
+    // On mobile, if we are in quiz view and just started, focus the question area.
     if (view === "quiz" && window.innerWidth < 768 && quizTopRef.current) {
         setTimeout(() => {
           quizTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
         }, 100);
     }
-  }, [view, selectedType, currentIndex]);
+  }, [view]);
 
   useEffect(() => {
     if (view === "loading") {
@@ -224,6 +225,9 @@ export default function Home() {
             // Robustly wait for all images to BE READY
             await waitForImages(resultCardRef.current);
             
+            // HACK FOR SAFARI/IOS: Warm-up render to force the layout engine to paint foreignObjects
+            await toPng(resultCardRef.current, { cacheBust: true, pixelRatio: 1, backgroundColor: '#ffffff' });
+
             const finalPosterUrl = await toPng(resultCardRef.current, { 
               cacheBust: true,
               pixelRatio: 2,
