@@ -37,7 +37,7 @@ export function PersonaAvatar({
         className="h-full w-full object-contain"
         loading={forExport ? "eager" : "lazy"}
         decoding={forExport ? "sync" : "async"}
-        crossOrigin="anonymous"
+        crossOrigin={imagePath.startsWith('data:') ? undefined : "anonymous"}
         onError={(e) => {
           (e.target as HTMLImageElement).src = "/illustrations/POOR.png";
         }}

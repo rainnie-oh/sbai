@@ -171,7 +171,7 @@ export default function Home() {
     setTimeout(() => {
       setResultCode("DONE");
       setView("result");
-    }, 5500);
+    }, 3000);
   };
 
   const shareResult = async () => {
