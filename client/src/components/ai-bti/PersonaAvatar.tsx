@@ -36,7 +36,7 @@ export function PersonaAvatar({
         alt={`${type} personality illustration`}
         className="h-full w-full object-contain"
         loading={forExport ? "eager" : "lazy"}
-        decoding="async"
+        decoding={forExport ? "sync" : "async"}
         crossOrigin="anonymous"
         onError={(e) => {
           (e.target as HTMLImageElement).src = "/illustrations/POOR.png";

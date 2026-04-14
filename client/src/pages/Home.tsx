@@ -47,34 +47,26 @@ export default function Home() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [illustrationDataUrl, setIllustrationDataUrl] = useState<string | null>(null);
-  const [testCount, setTestCount] = useState(() => {
-    // Persistent local count starting from 89
-    const saved = typeof window !== 'undefined' ? localStorage.getItem('sbai_test_count') : null;
-    return saved ? parseInt(saved) : 89;
-  });
+  const [testCount, setTestCount] = useState(89);
 
   const resultCardRef = useRef<HTMLDivElement>(null);
   const quizTopRef = useRef<HTMLDivElement>(null);
 
-  // Sync back to localStorage
+  // Fetch real-time count on initial load
   useEffect(() => {
-    localStorage.setItem('sbai_test_count', testCount.toString());
-  }, [testCount]);
+    fetch("https://api.counterapi.dev/v1/sbaiproject/home/")
+      .then(res => res.json())
+      .then(data => { if (data.count) setTestCount(data.count + 89); })
+      .catch(console.error);
+  }, []);
 
-  // Simulate a live counter 
-  useEffect(() => {
-    if (view === "landing") {
-      const interval = setInterval(() => {
-        setTestCount(prev => prev + (Math.random() > 0.7 ? 1 : 0));
-      }, 8000);
-      return () => clearInterval(interval);
-    }
-  }, [view]);
-
-  // Increment on submission
+  // Increment real-time count on quiz submission
   useEffect(() => {
     if (view === "loading") {
-      setTestCount(prev => prev + 1);
+      fetch("https://api.counterapi.dev/v1/sbaiproject/home/up")
+        .then(res => res.json())
+        .then(data => { if (data.count) setTestCount(data.count + 89); })
+        .catch(console.error);
     }
   }, [view]);
 
@@ -640,23 +632,6 @@ export default function Home() {
                     ))}
                   </div>
                 </section>
-
-                <div className="mt-8 flex flex-col items-center justify-center gap-4 border-t border-slate-100 pt-8">
-                  <div className="flex flex-wrap items-center justify-center gap-3">
-                    <Button variant="outline" className="rounded-full px-6 py-5 border-slate-200" onClick={shareResult}>
-                      <Share2 className="size-4" />
-                      {siteCopy.result.shareLabel}
-                    </Button>
-                    <Button className="cta-primary rounded-full px-8 py-5 shadow-lg" onClick={handleGeneratePoster}>
-                      <Download className="size-4" />
-                      {siteCopy.result.downloadLabel}
-                    </Button>
-                  </div>
-                  <Button variant="ghost" className="text-slate-400 text-xs hover:text-slate-600 mt-2" onClick={restartQuiz}>
-                     <RotateCcw className="size-3 mr-1" />
-                     {siteCopy.result.retakeLabel}
-                  </Button>
-                </div>
               </div>
             </div>
 
