@@ -100,7 +100,15 @@ export default function Home() {
   useEffect(() => {
     // Scroll to top when changing major views or navigating between personality types
     window.scroll(0, 0);
-  }, [view, selectedType]);
+
+    // On mobile, if we are in quiz view and just changed questions, 
+    // scroll to ensure the question card is visible
+    if (view === "quiz" && window.innerWidth < 768 && quizTopRef.current) {
+        setTimeout(() => {
+          quizTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 100);
+    }
+  }, [view, selectedType, currentIndex]);
 
   useEffect(() => {
     if (view === "loading") {
@@ -221,6 +229,9 @@ export default function Home() {
       setTimeout(async () => {
         if (resultCardRef.current) {
           try {
+            // Robustly wait for all images to BE READY
+            await waitForImages(resultCardRef.current);
+            
             const finalPosterUrl = await toPng(resultCardRef.current, { 
               cacheBust: true,
               pixelRatio: 2,
@@ -229,12 +240,12 @@ export default function Home() {
             setPosterUrl(finalPosterUrl);
           } catch (err) {
             console.error("Poster generation failed", err);
-            toast.error("生成失败，请重试。");
+            toast.error("生成失败，请尝试手动截屏。");
           } finally {
             setIsGenerating(false);
           }
         }
-      }, 800);
+      }, 500);
     } catch (err) {
       console.error("Image pre-load failed", err);
       toast.error("卡片初始化失败，请重试。");
@@ -743,7 +754,7 @@ const ResultCard = forwardRef<HTMLDivElement, { result: any; hideStats?: boolean
              {forExport && <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500/40 mb-2">SBAI PERSONALITY TEST</p>}
             <p className="font-display text-sm font-bold text-slate-400/80 tracking-widest">{result.personality.type}</p>
             <h1 className="mt-1 font-display text-[2rem] leading-none font-black text-slate-800 tracking-tight">{result.personality.nameZh}</h1>
-            <div className="mt-4 inline-block rounded-xl border border-slate-400/10 bg-white/40 px-4 py-1.5 backdrop-blur-md">
+            <div className="mt-4 inline-block rounded-xl border border-slate-400/10 bg-white/40 px-5 py-1.5 backdrop-blur-md">
                <p className="text-xs font-bold italic text-slate-600 leading-relaxed">
                 “{result.personality.tagline}”
               </p>
@@ -784,11 +795,11 @@ const ResultCard = forwardRef<HTMLDivElement, { result: any; hideStats?: boolean
                   </div>
                   <div className="text-left">
                     <p className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-300">SCAN TO TEST</p>
-                    <p className="text-[9px] font-bold text-slate-400 mt-0.5">SBAI Personality</p>
+                    <p className="text-[10px] font-semibold text-slate-400 mt-0.5 tracking-tight whitespace-nowrap">SBAI ｜ 你的 AI 调教师人格</p>
                   </div>
                 </div>
-                <div className="bg-white p-1 flex items-center justify-center border border-slate-50">
-                  <QRCodeSVG value={window.location.href} size={44} level="L" />
+                <div className="bg-white p-1 flex items-center justify-center border border-slate-50 ml-2">
+                  <QRCodeSVG value={window.location.href} size={48} level="L" marginSize={1} />
                 </div>
               </div>
             )}
@@ -842,7 +853,7 @@ function GalleryView({
                   className="relative aspect-square w-full flex items-center justify-center p-0 transition-colors group-hover:opacity-90 grayscale-[0.2] group-hover:grayscale-0"
                   style={{ backgroundColor: item.palette.soft }}
                 >
-                  <PersonaAvatar type={item.type} radius="0px" className="w-full h-full aspect-square object-cover" />
+                  <PersonaAvatar type={item.type} radius="0px" className="w-full h-full object-cover" />
                 </div>
                 
                 <div className="p-6 text-center flex-1" style={{ backgroundColor: item.palette.soft }}>
@@ -880,18 +891,19 @@ function TypeDetailView({
   onTypeChange: (type: PersonalityType) => void;
 }) {
   const poles = getPersonalityPoles(type.code);
-  const currentIndex = personalities.findIndex(p => p.type === type.type);
-  const prevType = personalities[(currentIndex - 1 + personalities.length) % personalities.length];
-  const nextType = personalities[(currentIndex + 1) % personalities.length];
-
-  const handlePrev = () => onTypeChange(prevType);
-  const handleNext = () => onTypeChange(nextType);
+  const nextType = personalities[(personalities.findIndex(p => p.type === type.type) + 1) % personalities.length];
+  const prevType = personalities[(personalities.findIndex(p => p.type === type.type) - 1 + personalities.length) % personalities.length];
 
   return (
     <div className="min-h-screen bg-[#fcfaf7] text-foreground">
       <header className="sticky top-0 z-40 border-b border-border/70 bg-background/92 backdrop-blur-xl">
         <div className="container flex items-center justify-between py-4">
           <BrandMark onClick={onGoHome} />
+          <nav className="hidden items-center gap-8 lg:flex">
+            <button className="nav-link font-bold text-slate-800" onClick={onBack}>
+              16 人格
+            </button>
+          </nav>
           <div className="flex items-center gap-3">
             <Button variant="outline" className="rounded-full" onClick={onBack}>
               返回列表
@@ -903,35 +915,23 @@ function TypeDetailView({
         </div>
       </header>
 
-      <main className="container py-2 md:py-12">
+      <main className="container py-8 md:py-12">
         <div className="mx-auto max-w-6xl">
-          {/* Top Navigation */}
-          <div className="flex items-center justify-between mb-2">
-            <Button 
-              variant="ghost" 
-              onClick={handlePrev} 
-              className="group flex items-center gap-2 text-slate-400 hover:text-slate-800 transition-colors"
+          <div className="flex items-center justify-between mb-8 px-2">
+            <button 
+              onClick={() => onTypeChange(prevType)}
+              className="flex items-center gap-2 text-slate-400 hover:text-slate-800 transition-colors"
             >
-               <ChevronLeft className="size-5 transition-transform group-hover:-translate-x-1" />
-               <div className="flex flex-col items-start leading-tight">
-                 <span className="text-[10px] uppercase tracking-wider opacity-50">PREVIOUS</span>
-                 <span className="text-sm font-bold hidden sm:inline">{prevType.nameZh}</span>
-               </div>
-            </Button>
-            <div className="text-xs font-bold text-slate-300 uppercase tracking-widest">
-              {currentIndex + 1} / {personalities.length}
-            </div>
-            <Button 
-              variant="ghost" 
-              onClick={handleNext} 
-              className="group flex items-center gap-2 text-slate-400 hover:text-slate-800 transition-colors"
+              <ChevronLeft className="size-5" />
+              <span className="hidden sm:inline text-sm font-bold uppercase tracking-widest">{prevType.type}</span>
+            </button>
+            <button 
+              onClick={() => onTypeChange(nextType)}
+              className="flex items-center gap-2 text-slate-400 hover:text-slate-800 transition-colors"
             >
-               <div className="flex flex-col items-end leading-tight">
-                 <span className="text-[10px] uppercase tracking-wider opacity-50">NEXT</span>
-                 <span className="text-sm font-bold hidden sm:inline">{nextType.nameZh}</span>
-               </div>
-               <ChevronRight className="size-5 transition-transform group-hover:translate-x-1" />
-            </Button>
+              <span className="hidden sm:inline text-sm font-bold uppercase tracking-widest">{nextType.type}</span>
+              <ChevronRight className="size-5" />
+            </button>
           </div>
 
           <div className="grid gap-8 xl:grid-cols-[440px_1fr]">
@@ -951,12 +951,9 @@ function TypeDetailView({
                     </div>
                   </div>
                   
-                  <PersonaAvatar 
-                    type={type.type} 
-                    radius="12px" 
-                    background="white"
-                    className="relative z-10 mx-auto mt-6 w-full aspect-square shadow-md" 
-                  />
+                  <div className="relative z-10 mx-auto mt-6 w-full aspect-square overflow-hidden rounded-[12px]">
+                     <PersonaAvatar type={type.type} radius="0px" className="w-full h-full object-cover shadow-md" />
+                  </div>
 
                   <div className="relative z-10 mt-6 rounded-3xl bg-white/60 p-5 border border-white/40 backdrop-blur-sm shadow-sm text-left">
                     <p className="text-sm leading-relaxed text-slate-700">
@@ -1002,35 +999,6 @@ function TypeDetailView({
                 </div>
               </aside>
             </div>
-          </div>
-
-          {/* Bottom Navigation */}
-          <div className="flex items-center justify-between mt-8 pt-2 border-t border-slate-200">
-             <Button 
-              variant="ghost" 
-              onClick={handlePrev} 
-              className="group flex items-center gap-2 text-slate-400 hover:text-slate-800 transition-colors"
-            >
-               <ChevronLeft className="size-5 transition-transform group-hover:-translate-x-1" />
-               <div className="flex flex-col items-start leading-tight">
-                 <span className="text-[10px] uppercase tracking-wider opacity-50">PREVIOUS</span>
-                 <span className="text-sm font-bold hidden sm:inline">{prevType.nameZh}</span>
-               </div>
-            </Button>
-            <div className="text-xs font-bold text-slate-300 uppercase tracking-widest">
-              {currentIndex + 1} / {personalities.length}
-            </div>
-            <Button 
-              variant="ghost" 
-              onClick={handleNext} 
-              className="group flex items-center gap-2 text-slate-400 hover:text-slate-800 transition-colors"
-            >
-               <div className="flex flex-col items-end leading-tight">
-                 <span className="text-[10px] uppercase tracking-wider opacity-50">NEXT</span>
-                 <span className="text-sm font-bold hidden sm:inline">{nextType.nameZh}</span>
-               </div>
-               <ChevronRight className="size-5 transition-transform group-hover:translate-x-1" />
-            </Button>
           </div>
         </div>
       </main>
@@ -1120,13 +1088,37 @@ function AILogo({ name, size = 20 }: { name: string; size?: number }) {
       className="flex items-center justify-center bg-white rounded-lg p-1 shadow-xs ring-1 ring-black/5"
       style={{ width: size + 8, height: size + 8 }}
     >
-      <img src={src} alt={name} className="object-contain" style={{ width: size, height: size }} onError={(e) => {
-        // Fallback to Icon if image fails
-        e.currentTarget.style.display = 'none';
-        e.currentTarget.parentElement!.innerHTML = '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot text-slate-400"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>';
-      }} />
+      <img 
+        src={src} 
+        alt={name} 
+        className="object-contain" 
+        crossOrigin="anonymous"
+        style={{ width: size, height: size }} 
+        onError={(e) => {
+          // Fallback to Icon if image fails
+          e.currentTarget.style.display = 'none';
+          e.currentTarget.parentElement!.innerHTML = '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot text-slate-400"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>';
+        }} 
+      />
     </div>
   );
+}
+
+/**
+ * UTILS: Wait for images in element to load
+ */
+function waitForImages(element: HTMLElement): Promise<void[]> {
+  const images = Array.from(element.querySelectorAll('img'));
+  const promises = images.map(img => {
+    if (img.complete && img.naturalHeight !== 0) {
+      return Promise.resolve();
+    }
+    return new Promise<void>((resolve) => {
+      img.onload = () => resolve();
+      img.onerror = () => resolve(); // Keep going even on error
+    });
+  });
+  return Promise.all(promises);
 }
 
 function Footer() {

@@ -16,7 +16,7 @@ export function PersonaAvatar({
   background = "transparent",
   className,
   radius = "12px",
-  forExport,
+  forExport = false,
   overrideSrc,
 }: PersonaAvatarProps) {
   const imagePath = overrideSrc || (typeof window !== 'undefined' ? `${window.location.origin}/illustrations/${type}.png` : `/illustrations/${type}.png`);
@@ -34,12 +34,14 @@ export function PersonaAvatar({
       <img
         src={imagePath}
         alt={`${type} personality illustration`}
-        className="h-full w-full object-cover"
+        className="h-full w-full object-contain"
+        loading={forExport ? "eager" : "lazy"}
+        decoding="async"
+        crossOrigin="anonymous"
         onError={(e) => {
           (e.target as HTMLImageElement).src = "/illustrations/POOR.png";
         }}
         style={{ display: "block" }}
-        loading="eager"
       />
       
       {!forExport && (
